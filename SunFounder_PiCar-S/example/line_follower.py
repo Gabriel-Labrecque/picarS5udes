@@ -19,9 +19,10 @@ import picar
 
 picar.setup()
 
-REFERENCES = [200, 200, 200, 200, 200]
-#calibrate = True
+#REFERENCES = [61.0, 67.5, 42.0, 85.5, 83.0]
+REFERENCES = [37.5, 38.5, 33.5, 43.5, 37.0]
 calibrate = False
+#calibrate = False
 forward_speed = 80
 backward_speed = 70
 turning_angle = 40
@@ -53,12 +54,19 @@ def main():
 	global turning_angle
 	off_track_count = 0
 	bw.speed = forward_speed
-
+#/usr/local/lib/python3.7/dist-packages/SunFounder_PiCar-1.0.1-py3.7.egg/picar/back_wheels.py
+	#a_step = 3
+	#b_step = 10
+	#c_step = 30
 	a_step = 3
 	b_step = 10
 	c_step = 30
 	d_step = 45
+	d_stepAvance1 = 45
+	d_stepRecule = 50
+	d_stepAvance2 = 30
 	bw.forward()
+
 	while True:
 		lt_status_now = lf.read_digital()
 		print(lt_status_now)
@@ -78,14 +86,25 @@ def main():
 		if	lt_status_now == [0,0,1,0,0]:
 			off_track_count = 0
 			fw.turn(90)
-		# turn right
+		# turn right 	elif lt_status_now in ([0,1,1,0,0],[0,1,0,0,0],[1,1,0,0,0] ,[1,0,0,0,0]):
 		elif lt_status_now in ([0,1,1,0,0],[0,1,0,0,0],[1,1,0,0,0],[1,0,0,0,0]):
 			off_track_count = 0
 			turning_angle = int(90 - step)
-		# turn left
+			
+		
+		# turn left 	elif lt_status_now in ([0,0,1,1,0],[0,0,0,1,0],[0,0,0,1,1],[0,0,0,0,1]):
 		elif lt_status_now in ([0,0,1,1,0],[0,0,0,1,0],[0,0,0,1,1],[0,0,0,0,1]):
 			off_track_count = 0
 			turning_angle = int(90 + step)
+
+		elif lt_status_now in ([0,0,0,0,1]):
+			off_track_count = 0
+			turning_angle = int(90  step)
+		
+		elif lt_status_now in ([1,0,0,0,0]):
+			off_track_count = 0
+			turning_angle = int(90 - step)
+
 		elif lt_status_now == [0,0,0,0,0]:
 			off_track_count += 1
 			if off_track_count > max_off_track_count:
@@ -98,23 +117,84 @@ def main():
 				
 				lf.wait_tile_center()
 				bw.stop()
-
 				fw.turn(turning_angle)
 				time.sleep(0.2)
 				bw.speed = forward_speed
 				bw.forward()
 				time.sleep(0.2)
-
 				
-
 		else:
 			off_track_count = 0
 	
 		fw.turn(turning_angle)
 		time.sleep(delay)
 
+
+'''
+		elif lt_status_now in ([0,0,0,0,1]):
+			tmp_angle = (turning_angle-90)/abs(90+turning_angle)
+			tmp_angle *= fw.turning_max
+			fw.turn(tmp_angle)
+				
+			lf.wait_tile_center()
+			''''''
+			off_track_count = 0
+			step = d_stepAvance1
+			turning_angle = int(90 + step)
+			bw.speed = forward_speed
+			bw.forward()
+			time.sleep(2)
+			bw.stop()
+			step = d_stepRecule
+			turning_angle = int(90 + step)
+			bw.speed = backward_speed
+			bw.backward()
+			time.sleep(5)
+			bw.stop()
+			step =  d_stepAvance2
+			turning_angle = int(90 + step)
+			bw.speed = forward_speed
+			bw.forward()
+			time.sleep(5)
+			bw.stop()
+			''''''
+		elif lt_status_now in ([1,0,0,0,0]):
+			tmp_angle = (turning_angle-90)/abs(90-turning_angle)
+			tmp_angle *= fw.turning_max
+			fw.turn(tmp_angle)
+				
+			lf.wait_tile_center()
+			'''
+'''
+			off_track_count = 0
+			step = d_stepAvance1
+			turning_angle = int(90 - step)
+			bw.speed = forward_speed
+			bw.forward()
+			time.sleep(5)
+			bw.stop()
+			step = d_stepRecule
+			turning_angle = int(90 + step)
+			bw.speed = backward_speed
+			bw.backward()
+			time.sleep(5)
+			bw.stop()
+			step =  d_stepAvance2
+			turning_angle = int(90 - step)
+			bw.speed = forward_speed
+			bw.forward()
+			time.sleep(5)
+			bw.stop()
+			'''
+
+
+		
+
+
 def cali():
 	references = [0, 0, 0, 0, 0]
+	print("go")
+	time.sleep(10)
 	print("cali for module:\n  first put all sensors on white, then put all sensors on black")
 	mount = 100
 	fw.turn(70)
@@ -157,7 +237,7 @@ if __name__ == '__main__':
 			while True:
 				setup()
 				main()
-				#straight_run()
+				straight_run()
 		except Exception as e:
 			print(e)
 			print('error try again in 5')
