@@ -8,10 +8,13 @@ enum States{
 }
 
 enum ObstacleStates{
-	Turning_Away,
+	Stop,
+	Reculer,
+	Turning_away,
 	Straight,
-	Turning_Back,
-	Catching_Line
+	Turning_back,
+	Finding_line
+	
 }
 
 # Constantes
@@ -60,7 +63,7 @@ var centerValueActivated = false
 var pasfinit = true
 var is_avoiding = false
 
-var sub_state = ObstacleStates.Turning_Away
+var sub_state = ObstacleStates.Stop
 var straight_count = 0;
 var rot_count = 0;
 var return_rot_count = 0;
@@ -106,42 +109,53 @@ func _process(delta):
 	
 	if(current_state == States.Obstacle_Avoidance):
 		
-		var next_state = ObstacleStates.Turning_Away
+		var next_state = ObstacleStates.Stop	
 		
-		if obstacle_sensor.is_colliding():
-			next_state = ObstacleStates.Turning_Away
+		if sub_state == ObstacleStates.Stop:
+			next_state = ObstacleStates.Reculer
 			
-		elif sub_state == ObstacleStates.Turning_Away :
+		elif  sub_state == ObstacleStates.Reculer and obstacle_sensor.is_colliding():
+			next_state = ObstacleStates.Reculer
+		elif sub_state == ObstacleStates.Reculer :
+			next_state = ObstacleStates.Turning_away
+		elif sub_state == ObstacleStates.Turning_away and obstacle_sensor.is_colliding() :
+			next_state = ObstacleStates.Turning_away
+		elif sub_state == ObstacleStates.Turning_away :
 			next_state = ObstacleStates.Straight
-			
-		elif sub_state == ObstacleStates.Straight and straight_count >= 10 :
-			next_state = ObstacleStates.Turning_Back
-		elif sub_state == ObstacleStates.Turning_Back and return_rot_count > rot_count:
-			next_state = ObstacleStates.Catching_Line
-		else:
-			next_state = sub_state
+		elif sub_state == ObstacleStates.Straight :
+			next_state = ObstacleStates.Turning_back
+		elif sub_state == ObstacleStates.Turning_back :
+			next_state = ObstacleStates.Finding_line 
+		elif sub_state == ObstacleStates.Finding_line and obstacle_sensor.is_colliding() :
+			next_state = ObstacleStates.Turning_away
+		
+		
 			
 		
 		match sub_state :
-			
-			ObstacleStates.Turning_Away:
-				rotation(10*delta,SLIGHT_SPEED,-deg_to_rad(20),"none","none",false)
-				rot_count +=1
-			ObstacleStates.Straight:
-				advance2(10*delta,SLIGHT_SPEED,"straight","straight",'none')
-				straight_count +=1
-				print("going straight")
-			ObstacleStates.Turning_Back:
-				rotation(delta,SLIGHT_SPEED,10*deg_to_rad(20),"none","none",false)
-				return_rot_count +=1
-				print("turning back")
-			ObstacleStates.Catching_Line:
+			ObstacleStates.Stop:
+				advance2(delta,0,'none','none',[false,false,true,false,false])
+				print("stop")
 				
-				if sensor_state.find(true) != -1:
+			ObstacleStates.Reculer:
+				obstacle_sensor.target_position = Vector3(0,0.3,0)
+				follow_line(delta,sensor_state,-1)
+				print('reculer')
+			ObstacleStates.Turning_away : 
+				rotation(delta,SLIGHT_SPEED,SLIGHT_TURN,'left','left',false)
+				print('turning away')
+			ObstacleStates.Straight :
+				advance2(delta,SLIGHT_SPEED,'none','none',[false,false,true,false,false])
+				print("straight")
+			ObstacleStates.Turning_back :
+				rotation(delta,SLIGHT_SPEED,SLIGHT_TURN,'right','right',false)
+				print("turing back")
+			ObstacleStates.Finding_line :
+				if sensor_state.find(true) != -1 :  # si un capteur de ligne trigger, changer en suiveur de ligne
 					current_state = States.Line_Following
-				else:
-					advance2(delta,MIDDLE_SPEED,"straight","straight",'none')
-				
+					return
+				else : advance2(delta,SLIGHT_SPEED,'none','none',[false,false,true,false,false])
+
 				
 		sub_state = next_state
 		return
@@ -172,58 +186,65 @@ func _process(delta):
 		return	
 	"""	
 	if(current_state == States.Line_Following)	:
-		match sensor_state:
+		follow_line(delta,sensor_state,1)
+		
+	if current_state == States.Three_point_turn:
+		advance2(delta,0,"other","none","none")
+	
+	
+func follow_line(delta,sensor_state,speed_multiplier):
+	match sensor_state:
 			[false, false, true, false, false]:
 				front_wheel_angle = 0.0
-				rear_wheel_speed = FORWARD_SPEED
+				rear_wheel_speed = speed_multiplier * FORWARD_SPEED
 				state = "straight"
 				side = "straight"
 				avance = true
 			[false, true, true, false, false]:
 				front_wheel_angle = SLIGHT_TURN
-				rear_wheel_speed = SLIGHT_SPEED
+				rear_wheel_speed = speed_multiplier * SLIGHT_SPEED
 				state = "slight"
 				side = "right"
 				avance = true
 			[false, true, false, false, false]:
 				front_wheel_angle = MIDDLE_TURN
-				rear_wheel_speed = MIDDLE_SPEED
+				rear_wheel_speed = speed_multiplier * MIDDLE_SPEED
 				state = "middle"
 				side = "right"
 				avance = true
 			[true, false, false, false, false], [true, true, false, false, false]:
 				front_wheel_angle = STRONG_TURN
-				rear_wheel_speed = STRONG_SPEED
+				rear_wheel_speed = speed_multiplier * STRONG_SPEED
 				state = "strong"
 				side = "right"
 				avance = true
 			[true, true, true, false, false], [true, true, true, true, false]:
 				front_wheel_angle = EXTREME_TURN
-				rear_wheel_speed = EXTREME_SPEED
+				rear_wheel_speed = speed_multiplier * EXTREME_SPEED
 				state = "extremeLeft"
 				side = "right"
 				avance = true
 			[false, false, true, true, false]:
 				front_wheel_angle = SLIGHT_TURN
-				rear_wheel_speed = SLIGHT_SPEED
+				rear_wheel_speed = speed_multiplier * SLIGHT_SPEED
 				state = "slight"
 				side = "left"
 				avance = true
 			[false, false, false, true, false]:
 				front_wheel_angle = MIDDLE_TURN
-				rear_wheel_speed = MIDDLE_SPEED
+				rear_wheel_speed = speed_multiplier * MIDDLE_SPEED
 				state = "middle"
 				side = "left"
 				avance = true
 			[false, false, false, false, true], [false, false, false, true, true]:
 				front_wheel_angle = STRONG_TURN
-				rear_wheel_speed = STRONG_SPEED
+				rear_wheel_speed = speed_multiplier * STRONG_SPEED
 				state = "strong"
 				side = "left"
 				avance = true
 			[false, true, true, true, true], [false, false, true, true, true]:
 				front_wheel_angle = EXTREME_TURN
-				rear_wheel_speed = EXTREME_SPEED
+				rear_wheel_speed = speed_multiplier * EXTREME_SPEED
 				state = "extremeRight"
 				side = "left"
 				avance = true
@@ -249,12 +270,9 @@ func _process(delta):
 				front_wheel_angle = 0
 				rear_wheel_speed = 0
 				state = "other"
+				
+	advance2(delta, rear_wheel_speed, state, side, sensor_state)
 
-
-		advance2(delta, rear_wheel_speed, state, side, sensor_state)
-		
-	if current_state == States.Three_point_turn:
-		advance2(delta,0,"other","none","none")
 	
 func change_state(Is_colliding):
 	
@@ -263,7 +281,6 @@ func change_state(Is_colliding):
 
 	elif current_state != States.Obstacle_Avoidance and Is_colliding:
 		current_state = States.Obstacle_Avoidance
-		rot_count = 0
 	else:
 		current_state = States.Line_Following
 
