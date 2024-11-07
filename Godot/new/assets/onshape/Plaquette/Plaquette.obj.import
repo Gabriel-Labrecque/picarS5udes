@@ -1,0 +1,22 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://bg2s8wnbla7mc"
+path="res://.godot/imported/Plaquette.obj-c22819556acaa2ff2b0dc01bff9f9002.mesh"
+
+[deps]
+
+files=["res://.godot/imported/Plaquette.obj-c22819556acaa2ff2b0dc01bff9f9002.mesh"]
+
+source_file="res://assets/onshape/Plaquette/Plaquette.obj"
+dest_files=["res://.godot/imported/Plaquette.obj-c22819556acaa2ff2b0dc01bff9f9002.mesh", "res://.godot/imported/Plaquette.obj-c22819556acaa2ff2b0dc01bff9f9002.mesh"]
+
+[params]
+
+generate_tangents=true
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+optimize_mesh=true
+force_disable_mesh_compression=false

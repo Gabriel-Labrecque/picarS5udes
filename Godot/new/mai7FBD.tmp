@@ -1,0 +1,76 @@
+[gd_scene load_steps=10 format=3 uid="uid://cuunt0at2qgdg"]
+
+[ext_resource type="Script" path="res://vehicule.gd" id="1_quesk"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_bklnc"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_q56qb"]
+size = Vector3(0.001, 0.001, 0.001)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_t8yju"]
+size = Vector3(0.001, 0.001, 0.001)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_b82iy"]
+size = Vector3(0.01, 0.01, 0.01)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_vpn2n"]
+size = Vector3(0.5, 0.5, 0.5)
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_wa875"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rorrw"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4qleo"]
+
+[node name="Main" type="Node3D"]
+
+[node name="Vehicule" type="RigidBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)
+script = ExtResource("1_quesk")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Vehicule"]
+transform = Transform3D(0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1, 0, 0, 0)
+mesh = SubResource("BoxMesh_bklnc")
+
+[node name="LeftSensor" type="Area3D" parent="Vehicule"]
+transform = Transform3D(0.001, 0, 0, 0, 0.001, 0, 0, 0, 0.001, -0.05, -0.05, -0.05)
+collision_layer = 4
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Vehicule/LeftSensor"]
+transform = Transform3D(0.001, 0, 0, 0, 0.001, 0, 0, 0, 0.001, -0.05, -0.05, -0.05)
+shape = SubResource("BoxShape3D_q56qb")
+
+[node name="RightSensor" type="Area3D" parent="Vehicule"]
+transform = Transform3D(0.001, 0, 0, 0, 0.001, 0, 0, 0, 0.001, 0.05, -0.05, -0.05)
+collision_layer = 4
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Vehicule/RightSensor"]
+transform = Transform3D(0.001, 0, 0, 0, 0.001, 0, 0, 0, 0.001, 0.05, -0.05, -0.05)
+shape = SubResource("BoxShape3D_t8yju")
+
+[node name="CenterSensor" type="Area3D" parent="Vehicule"]
+transform = Transform3D(0.001, 0, 0, 0, 0.001, 0, 0, 0, 0.001, 0, -0.05, -0.05)
+collision_layer = 4
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Vehicule/CenterSensor"]
+transform = Transform3D(0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01, 0, -0.05, -0.05)
+shape = SubResource("BoxShape3D_b82iy")
+
+[node name="Camera3D" type="Camera3D" parent="Vehicule"]
+transform = Transform3D(-4.37114e-08, -0.258819, 0.965926, 0, 0.965926, 0.258819, -1, 1.13133e-08, -4.2222e-08, 1.031, 0.512, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Vehicule"]
+transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0.05, 0)
+shape = SubResource("BoxShape3D_vpn2n")
+
+[node name="Ligne" type="MeshInstance3D" parent="Vehicule"]
+transform = Transform3D(0.01, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.007, 0)
+layers = 4
+mesh = SubResource("PlaneMesh_wa875")
+
+[node name="CSGBox3D" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.053, -0.25, -0.027)
+material_override = SubResource("StandardMaterial3D_rorrw")
+snap = 1e-06
+size = Vector3(5, 0.5, 5)
+material = SubResource("StandardMaterial3D_4qleo")
