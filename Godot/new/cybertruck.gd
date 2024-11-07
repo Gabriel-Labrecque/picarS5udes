@@ -12,6 +12,7 @@ enum ObstacleStates{
 	Reculer,
 	Turning_away,
 	Straight,
+	Contour,
 	Turning_back,
 	Finding_line
 	
@@ -131,6 +132,11 @@ func _process(delta):
 		elif sub_state == ObstacleStates.Straight and distance < 0.5 :
 			next_state = ObstacleStates.Straight
 		elif sub_state == ObstacleStates.Straight :
+			distance =0
+			next_state = ObstacleStates.Contour
+		elif sub_state == ObstacleStates.Contour and distance < 0.5:
+			next_state = ObstacleStates.Contour
+		elif sub_state == ObstacleStates.Contour :
 			next_state = ObstacleStates.Turning_back
 		elif sub_state == ObstacleStates.Turning_back and degre_rot >0 :
 			next_state = ObstacleStates.Turning_back
@@ -140,9 +146,6 @@ func _process(delta):
 			next_state = ObstacleStates.Turning_away
 		else :
 			next_state = ObstacleStates.Finding_line
-		
-		
-			
 		
 		match sub_state :
 			ObstacleStates.Stop:
@@ -156,17 +159,26 @@ func _process(delta):
 			ObstacleStates.Turning_away : 
 				rotation(delta,SLIGHT_SPEED,deg_to_rad(SLIGHT_TURN),'left','left',false)
 				degre_rot += delta*SLIGHT_TURN
-				print('turning away, deg rot = ',degre_rot)
+				#print('turning away, deg rot = ',degre_rot)
 			ObstacleStates.Straight :
 				obstacle_sensor.target_position = Vector3(0,0.1,0)
 				advance2(delta,FORWARD_SPEED,'straight','straight',[false,false,true,false,false])
 				distance += delta*FORWARD_SPEED
-				
 				print("straight")
+			ObstacleStates.Contour :
+				
+				if degre_rot >= 45/2 :
+					rotation(delta,SLIGHT_SPEED,deg_to_rad(SLIGHT_TURN),'right','right',false)
+					degre_rot -= delta*SLIGHT_TURN/2
+					print("contour rot = ", degre_rot)
+				else :
+					advance2(delta,FORWARD_SPEED,'straight','straight',[false,false,true,false,false])
+					distance += delta*FORWARD_SPEED
+					print("contour fwd ")
 			ObstacleStates.Turning_back :
 				rotation(delta,SLIGHT_SPEED,deg_to_rad(SLIGHT_TURN),'right','right',false)
 				degre_rot -= delta*SLIGHT_TURN/2
-				print("turning back deg rot  =",degre_rot)
+				#print("turning back deg rot  =",degre_rot)
 			ObstacleStates.Finding_line :
 				if sensor_state.find(true) != -1 :  # si un capteur de ligne trigger, changer en suiveur de ligne
 					current_state = States.Line_Following
