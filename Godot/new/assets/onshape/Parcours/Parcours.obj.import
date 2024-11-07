@@ -1,0 +1,22 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://27ydkl5j314b"
+path="res://.godot/imported/Parcours.obj-13be953f48550da1dd32b41dd87c10ca.mesh"
+
+[deps]
+
+files=["res://.godot/imported/Parcours.obj-13be953f48550da1dd32b41dd87c10ca.mesh"]
+
+source_file="res://assets/onshape/Parcours/Parcours.obj"
+dest_files=["res://.godot/imported/Parcours.obj-13be953f48550da1dd32b41dd87c10ca.mesh", "res://.godot/imported/Parcours.obj-13be953f48550da1dd32b41dd87c10ca.mesh"]
+
+[params]
+
+generate_tangents=true
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+optimize_mesh=true
+force_disable_mesh_compression=false
