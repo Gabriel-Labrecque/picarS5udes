@@ -70,6 +70,10 @@ var return_rot_count = 0;
 var current_state = States.Line_Following
 
 
+var distance = 0
+var degre_rot = 0
+var degre_initial = 0
+
 func _ready():
 	left_sensor = $"Suiveur_ligne/LeftSensor"
 	center_sensor = $"Suiveur_ligne/CenterSensor"
@@ -117,17 +121,25 @@ func _process(delta):
 		elif  sub_state == ObstacleStates.Reculer and obstacle_sensor.is_colliding():
 			next_state = ObstacleStates.Reculer
 		elif sub_state == ObstacleStates.Reculer :
+			degre_rot = degre_initial
 			next_state = ObstacleStates.Turning_away
-		elif sub_state == ObstacleStates.Turning_away and obstacle_sensor.is_colliding() :
+		elif sub_state == ObstacleStates.Turning_away and (obstacle_sensor.is_colliding() or degre_rot < degre_initial + 45) :
 			next_state = ObstacleStates.Turning_away
 		elif sub_state == ObstacleStates.Turning_away :
+			distance = 0
+			next_state = ObstacleStates.Straight
+		elif sub_state == ObstacleStates.Straight and distance < 0.5 :
 			next_state = ObstacleStates.Straight
 		elif sub_state == ObstacleStates.Straight :
+			next_state = ObstacleStates.Turning_back
+		elif sub_state == ObstacleStates.Turning_back and degre_rot >0 :
 			next_state = ObstacleStates.Turning_back
 		elif sub_state == ObstacleStates.Turning_back :
 			next_state = ObstacleStates.Finding_line 
 		elif sub_state == ObstacleStates.Finding_line and obstacle_sensor.is_colliding() :
 			next_state = ObstacleStates.Turning_away
+		else :
+			next_state = ObstacleStates.Finding_line
 		
 		
 			
@@ -142,23 +154,31 @@ func _process(delta):
 				follow_line(delta,sensor_state,-1)
 				print('reculer')
 			ObstacleStates.Turning_away : 
-				rotation(delta,SLIGHT_SPEED,SLIGHT_TURN,'left','left',false)
-				print('turning away')
+				rotation(delta,SLIGHT_SPEED,deg_to_rad(SLIGHT_TURN),'left','left',false)
+				degre_rot += delta*SLIGHT_TURN
+				print('turning away, deg rot = ',degre_rot)
 			ObstacleStates.Straight :
-				advance2(delta,SLIGHT_SPEED,'none','none',[false,false,true,false,false])
+				obstacle_sensor.target_position = Vector3(0,0.1,0)
+				advance2(delta,FORWARD_SPEED,'straight','straight',[false,false,true,false,false])
+				distance += delta*FORWARD_SPEED
+				
 				print("straight")
 			ObstacleStates.Turning_back :
-				rotation(delta,SLIGHT_SPEED,SLIGHT_TURN,'right','right',false)
-				print("turing back")
+				rotation(delta,SLIGHT_SPEED,deg_to_rad(SLIGHT_TURN),'right','right',false)
+				degre_rot -= delta*SLIGHT_TURN/2
+				print("turning back deg rot  =",degre_rot)
 			ObstacleStates.Finding_line :
 				if sensor_state.find(true) != -1 :  # si un capteur de ligne trigger, changer en suiveur de ligne
 					current_state = States.Line_Following
+					print('found the line')
 					return
-				else : advance2(delta,SLIGHT_SPEED,'none','none',[false,false,true,false,false])
+				else : 
+					advance2(delta,SLIGHT_SPEED,'none','none',[false,false,true,false,false])
 
 				
 		sub_state = next_state
 		return
+
 	
 	"""if obstacle_value and not isObstacleCount:
 		
