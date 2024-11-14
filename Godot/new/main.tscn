@@ -241,7 +241,7 @@ transform = Transform3D(1, 0, -3.55271e-15, 0, 1, 0, 3.55271e-15, 0, 1, 0, 0, -2
 shape = SubResource("ConcavePolygonShape3D_vpyjj")
 
 [node name="Cybertruck" parent="." instance=ExtResource("3_mpvsh")]
-transform = Transform3D(-2.18557e-08, 0, 0.5, 0, 0.5, 0, -0.5, 0, -2.18557e-08, -0.131463, 0, 0.253864)
+transform = Transform3D(-2.18557e-08, 0, 0.5, 0, 0.5, 0, -0.5, 0, -2.18557e-08, -0.26418, 0, 0.436076)
 script = ExtResource("4_8j86k")
 
 [node name="Obstacle" type="RayCast3D" parent="Cybertruck"]

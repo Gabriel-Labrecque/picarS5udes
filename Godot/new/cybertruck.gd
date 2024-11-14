@@ -287,16 +287,7 @@ func follow_line(delta,sensor_state,speed_multiplier):
 				side = "left"
 				avance = true
 			[false, false, false, false, false]:
-				front_wheel_angle = 0
-				rear_wheel_speed = 0
-				state = "none"
-				side = "none"
-				avance = true
-				off_track_count += 1
-				#if off_track_count > MAX_OFF_TRACK_COUNT:
-					#reverse_and_correct(delta, rear_wheel_speed, front_wheel_angle, state, side)
-					#off_track_count = 0
-				#return
+				find_line(delta)
 			_:
 				off_track_count = 0
 				front_wheel_angle = 0
@@ -306,6 +297,11 @@ func follow_line(delta,sensor_state,speed_multiplier):
 	advance2(delta, rear_wheel_speed, state, side, sensor_state)
 
 	
+	
+func find_line(delta) :
+	front_wheel_angle = EXTREME_TURN
+	advance2(delta,SLIGHT_SPEED,"none","none",[false,false,false,false,false])
+	print('Help mom Im lost')
 func change_state(Is_colliding):
 	
 	if  current_state == States.Obstacle_Avoidance:
