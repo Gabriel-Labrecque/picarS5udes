@@ -62,7 +62,8 @@ class Ultrasonic_Avoidance(object):
 			a = self.distance()
 			#print('    %s' % a)
 			sum += a
-		return int(sum/mount)
+		return int(sum/mount) +4
+	
 	def less_than(self, alarm_gate):
 		dis = self.get_distance()
 		status = 0

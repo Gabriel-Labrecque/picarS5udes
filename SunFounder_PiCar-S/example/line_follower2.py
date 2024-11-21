@@ -22,10 +22,7 @@ picar.setup()
 #REFERENCES = [61.0, 67.5, 42.0, 85.5, 83.0] #plancher
 #REFERENCES = [37.5, 38.5, 33.5, 43.5, 37.0] #TABLE GRISE
 #REFERENCES = [28.0, 28.0, 24.0, 32.5, 27.5]#TABLE ORANGE
-#REFERENCES = [29.5, 29.5, 24.5, 35.5, 29.5]#sac plastique blanc
-#REFERENCES =  [45.5, 45.0, 41.5, 51.5, 46.5]
-REFERENCES =  [113.0, 88.0, 81.5, 83.0, 105.5]
-
+REFERENCES = [29.5, 29.5, 24.5, 35.5, 29.5]#sac plastique blanc
 
 #calibrate = True
 calibrate = False
@@ -54,10 +51,12 @@ lastSens = "forward"
 targetSens = "forward"
 isCompteurTurnRecule = False
 def straight_run():
+    print("straight_run")
     while True:
         bw.speed = 60
         bw.forward()
         fw.turn_straight()
+
 
 def setup():
     if calibrate:
@@ -74,18 +73,17 @@ def main():
     global lastSpeed
     global lastSens
     global targetSens
+    print("1")
     ResetcompteurTurnAvance1 = 500
     ResetcompteurTurnRecule = 300
     ResetcompteurTurnAvance2 = 60
     off_track_count = 0
-#/usr/local/lib/python3.7/dist-packages/SunFounder_PiCar-1.0.1-py3.7.egg/picar/back_wheels.py
-    #a_step = 3
-    #b_step = 10
-    #c_step = 30
+    bw.speed = forward_speed
     a_step = 3
     b_step = 10
     c_step = 30
-    d_step = 45
+    d_step = 50
+    bw.forward()
 
 
     while True:
@@ -94,9 +92,10 @@ def main():
         lt_status_now = lf.read_digital()
 
         if lt_status_now == [0,0,1,0,0] and not isCompteurTurnRecule:
-            lastSpeed, lastSens = adjust_sens(lastSpeed=lastSpeed, increment=5, delay=0.05, targetSens="forward", lastSens=lastSens)
-            lastSpeed = adjust_speed(60, lastSpeed=lastSpeed, increment=5, delay=0.06)
-            bw.speed = lastSpeed
+            print("straight")
+            speed = adjust_speed(60, lastSpeed=lastSpeed , increment=5, delay=delay, targetSens="forward", lastSens=lastSens)
+            print(speed)
+            bw.speed = speed
             bw.forward()
             step = 0
             compteurTurnAvance1 = ResetcompteurTurnAvance1
@@ -105,18 +104,22 @@ def main():
             isturnLeft = False
             isturnRight = False
         elif lt_status_now == [0,1,1,0,0] or lt_status_now == [0,0,1,1,0] and not isturnLeft and not isturnRight :
+            print("left")
             step = a_step
-            lastSpeed, lastSens = adjust_sens(lastSpeed=lastSpeed, increment=5, delay=0.05, targetSens="forward", lastSens=lastSens)
-            lastSpeed = adjust_speed(40, lastSpeed=lastSpeed, increment=5, delay=0.06)
-            bw.speed = lastSpeed
+            speed = adjust_speed(60, lastSpeed=lastSpeed , increment=5, delay=delay, targetSens="forward", lastSens=lastSens)
+            print(speed)
+            bw.speed = speed
         elif lt_status_now == [0,1,0,0,0] or lt_status_now == [0,0,0,1,0]and not isturnLeft and not isturnRight:
             step = b_step
-
+            print("right")
+            speed = adjust_speed(40, lastSpeed=lastSpeed , increment=5, delay=delay, targetSens="forward", lastSens=lastSens)
+            print(speed)
+            bw.speed = speed
         elif lt_status_now == [1,1,0,0,0] or lt_status_now == [0,0,0,1,1]and not isturnLeft and not isturnRight:
             step = c_step
-            lastSpeed, lastSens = adjust_sens(lastSpeed=lastSpeed, increment=5, delay=0.05, targetSens="forward", lastSens=lastSens)
-            lastSpeed = adjust_speed(30, lastSpeed=lastSpeed, increment=5, delay=0.06)
-            bw.speed = lastSpeed
+            speed = adjust_speed(30, lastSpeed=lastSpeed , increment=5, delay=delay, targetSens="forward", lastSens=lastSens)
+            print(speed)
+            bw.speed = speed
         elif lt_status_now == [1,0,0,0,0] and not isturnRight and not isturnLeft :
             step = d_step
             isturnLeft = True
@@ -139,104 +142,114 @@ def main():
             turning_angle = int(90 + step)
             
         if isturnLeft and not isturnRight:
-            if compteurTurnAvance1 == 1 :
-                    print("isturnLeft    onAvance")
             if compteurTurnAvance1 > 0:
                 turning_angle = int(90 - c_step)
-                fw.turn(turning_angle)  # Angle ajusté pour avancer
-                lastSpeed, lastSens = adjust_sens(lastSpeed=lastSpeed, increment=1, delay=0.005, targetSens="forward", lastSens=lastSens)
-                lastSpeed = adjust_speed(25, lastSpeed=lastSpeed, increment=1, delay=0.005)
-                bw.speed = lastSpeed
+                fw.turn(turning_angle) 
+                speed = adjust_speed(25, lastSpeed=lastSpeed , increment=5, delay=delay, targetSens="forward", lastSens=lastSens)
+                bw.speed = speed
                 bw.forward()
                 compteurTurnAvance1 -= 1
                 isCompteurTurnRecule = False
+                lastSens="forward"
             elif compteurTurnRecule > 0 and compteurTurnAvance1 == 0:
-                if compteurTurnRecule == 1 and compteurTurnAvance1 == 0:
-                    print("isturnLeft   onRecule")
-                turning_angle = int(90 + d_step)
-                tmp_angle = -(turning_angle - 90) + 90
-                lastSpeed, lastSens = adjust_sens(lastSpeed=lastSpeed, increment=1, delay=0.005, targetSens="backward", lastSens=lastSens)
-                lastSpeed = adjust_speed(25, lastSpeed=lastSpeed, increment=1, delay=0.005)
-                bw.speed = lastSpeed
+                turning_angle = int(90 - d_step)
+                speed = adjust_speed(25, lastSpeed=lastSpeed, increment=5, delay=delay, targetSens="backward", lastSens=lastSens)
+                bw.speed = speed
                 fw.turn(turning_angle)
                 bw.backward()
                 compteurTurnRecule -= 1
                 isCompteurTurnRecule = False
+                lastSens="backward"
             elif compteurTurnAvance2 > 0 and compteurTurnRecule == 0:
-                if compteurTurnAvance2 == 1 and compteurTurnRecule == 0:
-                    print("isturnLeft   onAvanceApresRecule")
-                turning_angle = int(90 - b_step)
+                turning_angle = int(90 - d_step)
                 fw.turn(turning_angle)
-                lastSpeed, lastSens = adjust_sens(lastSpeed=lastSpeed, increment=1, delay=0.005, targetSens="forward", lastSens=lastSens)
-                lastSpeed = adjust_speed(25, lastSpeed=lastSpeed, increment=1, delay=0.005)
-                bw.speed = lastSpeed
+                speed = adjust_speed(25, lastSpeed=lastSpeed, increment=5, delay=delay, targetSens="forward", lastSens=lastSens)
+                bw.speed = speed
                 bw.forward()
                 compteurTurnAvance2 -= 1
                 isCompteurTurnRecule = False
+                lastSens="forward"
             elif compteurTurnAvance2 == 0:   
-                print("fin") 
+                bw.stop()
                 compteurTurnAvance1 = ResetcompteurTurnAvance1
                 compteurTurnRecule = ResetcompteurTurnRecule
                 compteurTurnAvance2 = ResetcompteurTurnAvance2
                 isCompteurTurnRecule = False
+                lastSens="forward"
             else:
-                print("autre cas")
-            time.sleep(delay)   
+                bw.stop()
+            time.sleep(delay) 
+            lastSpeed = bw.speed
             off_track_count = 0                
                 
             
         elif isturnRight and not isturnLeft:
            
-            if compteurTurnAvance1 == 1 :
-                    print("isturnRight    onAvance")
+ 
+            print("isturnRight")
             if compteurTurnAvance1 > 0:
                 isCompteurTurnRecule = False
+                print("compteurTurnAvance1")
+                print(compteurTurnAvance1)
                 turning_angle = int(90 + c_step)
                 fw.turn(turning_angle)
-                lastSpeed, lastSens = adjust_sens(lastSpeed=lastSpeed, increment=1, delay=0.005, targetSens="forward", lastSens=lastSens)
-                lastSpeed = adjust_speed(25, lastSpeed=lastSpeed, increment=1, delay=0.005)
-                bw.speed = lastSpeed
+                speed = adjust_speed(25, lastSpeed=lastSpeed, increment=5, delay=delay, targetSens="forward", lastSens=lastSens)
+                bw.speed = speed
                 bw.forward()
                 compteurTurnAvance1 -= 1
+                lastSens="forward"
             elif compteurTurnRecule > 0 and compteurTurnAvance1 == 0 :
-                if compteurTurnRecule == 1 and compteurTurnAvance1 == 0:
-                    print("isturnRight   onRecule")
                 isCompteurTurnRecule = False
                 turning_angle = int(90 - d_step)
-                tmp_angle = -(turning_angle + 90) - 90
-                lastSpeed, lastSens = adjust_sens(lastSpeed=lastSpeed, increment=1, delay=0.005, targetSens="backward", lastSens=lastSens)
-                lastSpeed = adjust_speed(25, lastSpeed=lastSpeed, increment=1, delay=0.005)
-                bw.speed = lastSpeed
+                print("compteurTurnRecule")
+                print(compteurTurnRecule)
+
+                speed = adjust_speed(25, lastSpeed=lastSpeed, increment=5, delay=delay, targetSens="backward", lastSens=lastSens)
+                bw.speed = speed
                 fw.turn(turning_angle)
                 bw.backward()
                 compteurTurnRecule -= 1
+                lastSens="backward"
             elif compteurTurnAvance2 > 0 and compteurTurnRecule == 0:
-                if compteurTurnAvance2 == 1 and compteurTurnRecule == 0:
-                    print("isturnRight   onAvanceApresRecule")
-                turning_angle = int(90 + b_step)
+
+                print("compteurTurnAvance2")
+                print(compteurTurnAvance2)
+                turning_angle = int(90 + d_step)
                 fw.turn(turning_angle)
-                lastSpeed, lastSens = adjust_sens(lastSpeed=lastSpeed, increment=1, delay=0.005, targetSens="forward", lastSens=lastSens)
-                lastSpeed = adjust_speed(25, lastSpeed=lastSpeed, increment=1, delay=0.06)
-                bw.speed = lastSpeed
+                speed = adjust_speed(25, lastSpeed=lastSpeed, increment=5, delay=delay, targetSens="forward", lastSens=lastSens)
+                bw.speed = speed
                 bw.forward()
                 compteurTurnAvance2 -= 1
                 isCompteurTurnRecule = False
+                lastSens="forward"
             elif compteurTurnAvance2 == 0:
                 print("fin")
+                print(compteurTurnAvance2)
+                speed = adjust_speed(25, lastSpeed=lastSpeed, increment=5, delay=delay, targetSens="forward", lastSens=lastSens)
+                bw.speed = speed
+                time.sleep(0.5) 
                 compteurTurnAvance1 = ResetcompteurTurnAvance1
                 compteurTurnRecule = ResetcompteurTurnRecule
                 compteurTurnAvance2 = ResetcompteurTurnAvance2
                 isCompteurTurnRecule = False
+                lastSens="forward"
             else:
-                print("autre cas")  # Arrête le robot si aucun compteur n'est actif
+                bw.stop() 
             time.sleep(delay)
             off_track_count = 0
+            lastSpeed = bw.speed  
+            lastSens ="forward"
 
+        
+       
+
+           
         else:
             off_track_count = 0
         if not isturnRight and not isturnLeft:  
             fw.turn(turning_angle)
-            time.sleep(delay)           
+            time.sleep(delay) 
+            lastSpeed = bw.speed
 """ 
 
         elif lt_status_now == [0,0,0,0,0] and not isturnRight and not isturnLeft:
@@ -258,42 +271,47 @@ def main():
                 time.sleep(0.2)"""
 
 
-def adjust_speed(target_speed = 60, lastSpeed = 60, increment=5, delay=0.05):
 
+
+
+def adjust_speed(target_speed = 60, lastSpeed = 60, increment=5, delay=0.0005, targetSens="forward", lastSens="forward"):
+    # Si la direction cible est différente de la direction précédente, on ralentit d'abord à zéro
+    print("2")
+    if targetSens != lastSens:
+        while lastSpeed > 0:
+            print("while lastSpeed > 0")
+            lastSpeed = max(lastSpeed - increment, 0)  # Ralentir progressivement
+            bw.speed = lastSpeed
+            # Maintenir la direction actuelle avant le changement
+            if lastSens == "forward":
+                bw.forward()
+            else:
+                bw.backward()
+            time.sleep(delay)
+        # La vitesse est maintenant à zéro; on peut changer de sens
+        lastSpeed = 0  # Réinitialiser la vitesse à zéro pour le changement de direction
+    
+    # Maintenant, ajuster la vitesse pour atteindre `target_speed` dans la nouvelle direction
     while lastSpeed != target_speed:
+        print("3")
         if lastSpeed < target_speed:
             lastSpeed = min(lastSpeed + increment, target_speed)
         elif lastSpeed > target_speed:
             lastSpeed = max(lastSpeed - increment, target_speed)
         
         bw.speed = lastSpeed
-        print(lastSpeed)
+        print("4")
+        # Appliquer la nouvelle direction
         if targetSens == "forward":
             bw.forward()
         elif targetSens == "backward":
             bw.backward()
+        
         time.sleep(delay)
     return lastSpeed
-def adjust_sens(lastSpeed = 60, increment=5, delay=0.05, targetSens="forward", lastSens="forward"):
-    # Si la direction cible est différente de la direction précédente, on ralentit d'abord à zéro
-    
-    if targetSens != lastSens:
-        print(lastSpeed)
-        print(targetSens)
-        print(lastSens)
-        while lastSpeed > 0:
-           
-            lastSpeed = max(lastSpeed - increment, 0)  # Ralentir progressivement
-            bw.speed = lastSpeed
-            if lastSens == "forward":
-                bw.forward()
-            else:
-                bw.backward()
-            time.sleep(delay)
-        lastSpeed = 0
-    return lastSpeed, targetSens
 
-  
+
+
 def cali():
     references = [0, 0, 0, 0, 0]
     print("go")

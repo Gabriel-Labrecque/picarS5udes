@@ -65,6 +65,7 @@ def start_avoidance():
 	count = 0
 	while True:
 		distance = ua.get_distance()
+		#distance = 12
 		print("distance: %scm" % distance)
 		if distance > 0:
 			count = 0
@@ -90,12 +91,12 @@ def start_avoidance():
 
 		else:						# forward
 			fw.turn_straight()
-			if count > timeout:  # timeout, stop;
+			""" if count > timeout:  # timeout, stop;
 				bw.stop()
 			else:
 				bw.backward()
 				bw.speed = forward_speed
-				count += 1
+				count += 1 """
 
 def stop():
 	bw.stop()
