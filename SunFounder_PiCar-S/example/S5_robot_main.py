@@ -171,7 +171,7 @@ class LineState:
             return new_line_mode
         elif self.LineLostCounter >= 150: # TODO: replace 20 by a proper timer <-------------
             # line is fully lost, change mode
-            print('change state OuterRight->reverseRight')
+            print('change state OuterRight->reverseRight <-----')
             new_line_mode = LineState.reverseRight
             self.SetDriveTarget(0, 0)
             return new_line_mode
@@ -207,7 +207,7 @@ class LineState:
             return new_line_mode
         elif self.LineLostCounter >= 150: # TODO: replace 20 by a proper timer <-------------
             # line is fully lost, change mode
-            print('change state OuterLeft->reverseLeft')
+            print('change state OuterLeft->reverseLeft <------')
             new_line_mode = LineState.reverseLeft
             self.SetDriveTarget(0, 0)
             return new_line_mode
@@ -238,11 +238,15 @@ class LineState:
             # line found
             new_line_mode = LineState.outerRight # good enough state, it will get changed again next loop
             self.SetDriveTarget(30, 45)
-        elif self.LineLostCounter > 80:
+        elif self.LineLostCounter < 100:
+            # keep reversing
+            new_line_mode = LineState.reverseRight
+            self.SetDriveTarget(-30, -45)
+        elif self.LineLostCounter < 150:
             # start slowing down again
             new_line_mode = LineState.reverseRight
             self.SetDriveTarget(-20, -30)
-        elif self.LineLostCounter > 100:
+        elif self.LineLostCounter >= 150:
             # reversing for long enough, start going forward again
             new_line_mode = LineState.outerRight
             self.SetDriveTarget(0, 0)
@@ -260,12 +264,16 @@ class LineState:
         if line_sensor not in ([0,0,0,0,0]):
             # line found
             new_line_mode = LineState.outerLeft # good enough state, it will get changed again next loop
-            self.SetDriveTarget(30, -45)
-        elif self.LineLostCounter > 80:
+            self.SetDriveTarget(0, 0)
+        elif self.LineLostCounter < 100:
+            # keep reversing
+            new_line_mode = LineState.reverseLeft
+            self.SetDriveTarget(-30, 45)
+        elif self.LineLostCounter < 150:
             # start slowing down again
             new_line_mode = LineState.reverseLeft
             self.SetDriveTarget(-20, 30)
-        elif self.LineLostCounter > 100:
+        elif self.LineLostCounter >= 150:
             # reversing for long enough, start going forward again
             new_line_mode = LineState.outerLeft
             self.SetDriveTarget(0, 0)
