@@ -50,7 +50,7 @@ distance =0
 
 #calibrate = True
 calibrate = False
-isStop, isObstacle = False, False
+isStop, isObstacle, isAfterExtremeTurn = False, False, False
 isTurnExtremeLeft, isTurnExtremeRight = False, False
 forward_speed = 80
 backward_speed = 70
@@ -93,7 +93,7 @@ def setup():
 
 def main():
     global turning_angle, targetSens
-    global isTurnExtremeRight, isTurnExtremeLeft, isObstacle, isStop
+    global isTurnExtremeRight, isTurnExtremeLeft, isObstacle, isStop, isAfterExtremeTurn
     global cptTurnExtremeSteps, cptStraightAfterExtremeTurn, cptStopProgressif, cptObstacleSteps
     global lastSpeedSens
     global angleLevelAscending, speedLevelDescending
@@ -132,34 +132,33 @@ def main():
             
             if (IsStatusLineCaptorValid and check_specific_case("isNotStop_and_isNotObstacle")):
             # ETAT CAPTEUR VALID
-                if lt_status_now[2] == 1 and check_specific_case("at_least_one_extreme_turn"):
+                if lt_status_now[2] == 1:
+                    if check_specific_case("at_least_one_extreme_turn"):
                   #### DEFINIR VARIABLE POUR ACCELERATION PROGRESSIVE PENDANT 100 CYCLES ####
-                    cptStraightAfterExtremeTurn = 100
-                                
-                    print("Basse vitesse apres extremeTurn")
-                    fw.turn(90) # Roue normale
-                    bw.stop() # Arrête les moteurs pour dire que on a finit EXTREME TURN
+                        cptStraightAfterExtremeTurn = 100
+                        isAfterExtremeTurn = True        
+                        print("Basse vitesse apres extremeTurn")
+                        fw.turn(90) # Roue normale
+                        bw.stop() # Arrête les moteurs pour dire que on a finit EXTREME TURN
                     
-                    lastSpeedSens = (1, "forward") #
-                    isTurnExtremeLeft = False
-                    isTurnExtremeRight = False
-                    cptTurnExtremeSteps =  [400, 250, 100]
+                        lastSpeedSens = (1, "forward") #
+                        isTurnExtremeLeft = False
+                        isTurnExtremeRight = False
+                        cptTurnExtremeSteps =  [400, 250, 100]
                     
 
                 #### ACCELERATION PROGRESSIVE ####
-                    if cptStraightAfterExtremeTurn > 0: # tant que on a pas atteint 100
+                    if cptStraightAfterExtremeTurn > 0 and isAfterExtremeTurn: # tant que on a pas atteint 100
                         print("cptStraightAfterExtremeTurn")
                         target_speed = speedLevelDescending[4]# tres basse vitesse
                         cptStraightAfterExtremeTurn -= 1
+                    if cptStraightAfterExtremeTurn <= 0:
+                        isAfterExtremeTurn = False
                 
-                
-                #### MOUVEMENT STRAIGHT NORMAL ####
-                else:
-                   
-                    target_speed = speedLevelDescending[0]
-                    turning_angle = angleLevelAscending[0]
-                    
-            if lt_status_now == [0,0,1,0,0] and not check_specific_case("at_least_one_extreme_turn"):    
+            
+                 
+            #### MOUVEMENT STRAIGHT NORMAL ####       
+            if lt_status_now == [0,0,1,0,0] and not check_specific_case("at_least_one_extreme_turn") and not isAfterExtremeTurn :    
                 target_speed = speedLevelDescending[0]
                 step = angleLevelAscending[0]
                 
