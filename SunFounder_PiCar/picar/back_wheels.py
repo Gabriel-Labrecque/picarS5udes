@@ -67,6 +67,12 @@ class Back_Wheels(object):
 		self.left_wheel.forward()
 		self.right_wheel.forward()
 		self._debug_('Running forward')
+	
+	def forwardLeft(self):
+		''' Move both wheels forward '''
+		self.right_wheel.forward()
+		self._debug_('Running forward')
+
 
 	def backward(self):
 		''' Move both wheels backward '''
@@ -153,6 +159,7 @@ class Back_Wheels(object):
 def test():
 	import time
 	back_wheels = Back_Wheels()
+	back_wheels.forwardLeft()
 	DELAY = 0.01
 	try:
 		back_wheels.forward()

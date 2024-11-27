@@ -100,8 +100,8 @@ class Pin(object):
             self._error('Pin should be in %s, not %s' % (self._dict.keys(), pin))
         self._value = 0
         self.init(mode, pull=setup)
-        # self._info("Pin init finished.")
-        
+        #self._info("Pin init finished.")
+
     def check_board_type(self):
         type_pin = self.dict()["BOARD_TYPE"]
         GPIO.setup(type_pin, GPIO.IN)
@@ -136,7 +136,7 @@ class Pin(object):
         if len(value) == 0:
             self.mode(self.IN)
             result = GPIO.input(self._pin)
-            # self._debug("read pin %s: %s" % (self._pin, result))
+            #self._debug("read pin %s: %s" % (self._pin, result))
             return result
         else:
             value = value[0]
@@ -202,17 +202,17 @@ class Pin(object):
 
 
 class Ultrasonic_Avoidance(object):
-    # timeout = 0.05
+    timeout = 0.05
 
-    # def __init__(self):
-    # 	self.channel = channel
+    #def __init__(self):
+    # 	self.channel = 1
     # 	GPIO.setmode(GPIO.BCM)
 
     def distance(self):
         timeout=0.01
         trig = Pin('D8')
         echo = Pin('D9')
-        
+
         trig.low()
         time.sleep(0.01)
         trig.high()
@@ -238,7 +238,7 @@ class Ultrasonic_Avoidance(object):
         sum = 0
         for i in range(mount):
             a = self.distance()
-            #print('    %s' % a)
+            print('    %s' % a)
             sum += a
         return int(sum/mount)
 
@@ -265,7 +265,7 @@ def test():
         if distance != -1:
             print('distance', distance, 'cm')
             time.sleep(0.2)
-        else:
+        else :
             print(False)
         if status == 1:
             print("Less than %d" % threshold)
