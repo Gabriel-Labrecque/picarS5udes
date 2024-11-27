@@ -61,7 +61,7 @@ class LineState:
         # --------------
 
         # get sensor status
-        sensor_status = [0,0,1,0,0] # TODO: replace with actual sensor
+        sensor_status = lf.read_digital() # read the line follower sensor
             # maybe do some check on very important case like [0,0,0,0,0] or [1,1,1,1,1]
         if sensor_status == [0,0,0,0,0]:
             self.LineLostCounter = self.LineLostCounter + 1
@@ -293,8 +293,10 @@ class DrivingState:
             print("placeholder")
         elif self.CurrentDrivingState == self.DrivingStateLost:
             print("placeholder")
+            self.CurrentDrivingState = self.DrivingStateLine
         else: # self.CurrentDrivingState == self.DrivingStateNone:
             self.CurrentDrivingState = self.DrivingStateLost
+
         return self.CurrentDrivingState
 
     def CheckChangeLine(self):
@@ -357,14 +359,14 @@ def SetDriveTarget(wheel_speed, wheel_angle):
         bw.speed = smooth_speed
         bw.backward()
 
-    fw.turn(smooth_angle)
+    fw.turn(int(90 + smooth_angle))
 
 
 def InitCar():
     # init picar
     bw.speed = 0
     bw.forward()
-    fw.turn(0)
+    fw.turn(90)
     # init global variable
     global ModeLineFollower
     ModeLineFollower.CurrentMode = LineState.straight
