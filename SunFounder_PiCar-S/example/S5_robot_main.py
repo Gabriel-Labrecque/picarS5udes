@@ -385,15 +385,16 @@ if __name__ == '__main__':
     try:
         driving_state = DrivingState()
         InitCar()
-        last_time = time.process_time()
-        delta_t = last_time # delta time
+        #last_time = time.process_time()
+        #delta_t = last_time # delta time
         
 
         while(True):
             # get time elapsed
-            new_time = time.process_time()
-            delta_t = new_time - last_time
-            last_time = new_time
+            #new_time = time.process_time()
+            #delta_t = new_time - last_time
+            #last_time = new_time
+            delta_t = 1
             # update driving mode
             drive_mode = driving_state.CheckDrivingMode()
 
@@ -401,4 +402,6 @@ if __name__ == '__main__':
             Drive(drive_mode, delta_t)
     except Exception as e:
         print('ERROR CATCHED: ' + e)
+        TerminateCar()
+    except KeyboardInterrupt:
         TerminateCar()
