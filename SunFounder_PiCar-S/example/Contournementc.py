@@ -59,8 +59,9 @@ cptStopProgressif = 0
 cptTurnExtremeSteps = [400, 250, 100]
 angleLevelAscending = [0, 3, 10, 30, 45]
 speedLevelDescending = [50, 45, 40, 35, 30]
- 
-
+cptFindSteps = 0
+rayon_cercle = 20
+cercle_en_cours = False
 
 lastSpeedSens = (1, "forward") 
 
@@ -256,7 +257,13 @@ def stopProgressif():
 
 
 def find_line():
-    stop()
+    global cptFindSteps
+
+    if not cercle_en_cours :
+        adjust_speed_and_sens()
+
+
+
    
 def stop():
     bw.stop()
