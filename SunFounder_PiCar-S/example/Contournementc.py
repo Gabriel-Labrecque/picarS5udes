@@ -63,7 +63,7 @@ angleLevelAscending = [0, 3, 10, 30, 45]
 speedLevelDescending = [50, 45, 40, 35, 30]
 
 
-cptFindSteps = 0
+cptFindSteps = 1
 rayon_cercle = 20
 wheel_base = 15
 
@@ -115,9 +115,10 @@ def main():
         try:
             lt_status_now = lf.read_digital()
             IsStatusLineCaptorValid = lt_status_valid(lt_status_now)
+    
+
+            
             #distance = getDistance(distance)
-            
-            
             #### ON STOP TOUT ####
             if (lt_status_now == [1,1,1,1,1] and not check_specific_case("isStop")):
                 isStop = True
@@ -125,7 +126,7 @@ def main():
             
             #### ON AS UN OBSTACLE ####
             if ((distance < 11 ) and not check_specific_case("isObstacle")):
-                isObstacle = False #True 
+                isObstacle = False
                 
             
             
@@ -146,8 +147,7 @@ def main():
                         lastSpeedSens = (1, "forward") #
                         isTurnExtremeLeft = False
                         isTurnExtremeRight = False
-                        cptTurnExtremeSteps =  [400, 250, 100]
-                        
+                        cptTurnExtremeSteps = [400, 250, 100]
                     #### ACCELERATION PROGRESSIVE ####
                     if cptStraightAfterExtremeTurn > 0: # tant que on a pas atteint 100
                         print("cptStraightAfterExtremeTurn")
@@ -191,32 +191,49 @@ def main():
             #### AU MOIN 1 EXTREME TURN ACTIVER PEUT IMPORTE STATUS CAPTEUR####
             if (check_specific_case("at_least_one_extreme_turn")):
                 turnExtreme(isTurnExtremeRight, isTurnExtremeLeft)  #### EXECUTE EXTREME TURN ####
-                off_track_count = 0
+            
             #### EXECUTE STOP PEUT IMPORTE STATUS CAPTEUR #### 
             elif(check_specific_case("isStop")):
                 stopProgressif()
-                off_track_count = 0
+                
             #### EXECUTE CONTOURNEMENT OBSTACLE PEUT IMPORTE STATUS CAPTEUR ####     
             elif(check_specific_case("isObstacle")):
                 obstacle(distance, IsStatusLineCaptorValid)
-                off_track_count = 0
+                
             #### STATUS CAPTEUR VALID ET PAS DE CAS SPECIFIQUE ####    
             elif (check_specific_case("not_a_specific_case") and IsStatusLineCaptorValid):
                 lastSpeedSens = adjust_speed_and_sens(target_speed=target_speed, lastSpeed=lastSpeedSens[0], increment=2, targetSens="forward", lastSens=lastSpeedSens[1])
-                turning_angle, off_track_count = adjust_angle(lt_status_now, off_track_count, step, targetSens="forward")
+                turning_angle, off_track_count = adjust_angle(lt_status_now, turning_angle, off_track_count, step)
             
     
                     
             else: #### LOST TRACK ETAT CAPTEUR NON VALID ####
+                print("lost track")
+                find_line()
                 off_track_count = +1
-                if off_track_count > max_off_track_count:
-                    print("lost track")
-                    #find_line()
+
             time.sleep(delay)
                 
                 
     
+            #  if lt_status_now == [0,0,0,0,0] and check_specific_case("not_a_specific_case"):
+            #    off_track_count += 1
+            #    if off_track_count > max_off_track_count:
+            #        tmp_angle = (turning_angle-90)/abs(90-turning_angle)
+            #        tmp_angle *= fw.turning_max
+            #        bw.speed = backward_speed
+            #        bw.backward()
+            #        fw.turn(tmp_angle)
+                    
+            #        lf.wait_tile_center()
+            #        bw.stop()
 
+            #        fw.turn(turning_angle)
+            #        time.sleep(0.2)
+            #        bw.speed = forward_speed
+            #        bw.forward()
+            #        time.sleep(0.2)
+            #
         except Exception as e:
             print(f"An error occurred: {e}")
             # Log the error, restart the loop, or handle the exception accordingly
@@ -249,26 +266,15 @@ def find_line():
 
     steering_angle = math.asin(wheel_base/rayon_cercle)
 
-
     if cptFindSteps % 20 == 0 :
+        print("changing radius")
         rayon_cercle *= 1.5
+
     else :
+        print("fais ton esti de spiral")
         fw.turn(90-math.degrees(steering_angle))
         lastSpeedSens = adjust_speed_and_sens(30,lastSpeedSens[0],lastSens=lastSpeedSens[1])
         cptFindSteps +=1
-
-    
-        
-
-
-
-
-    
-
-
-
-
-
 
    
 def stop():
@@ -302,9 +308,8 @@ def check_specific_case(mode="none"):
 
 def adjust_speed_and_sens(target_speed=60, lastSpeed=60, increment=10, targetSens="forward", lastSens="forward"):
     
-    global lastSpeedSens
     # Étape 1 : Si les directions sont différentes, ralentir jusqu'à zéro
-   
+
     if targetSens != lastSens:
         if lastSpeed > 0:
             lastSpeed = max(lastSpeed - increment, 0)  # Réduire la vitesse progressivement
@@ -333,32 +338,16 @@ def adjust_speed_and_sens(target_speed=60, lastSpeed=60, increment=10, targetSen
 
 
 
-def adjust_angle(lt_status_now =[0,0,0,0,0], off_track_count=0, step=0, targetSens = "forward"):
-    #### PARAMETRE ####    
-    turning_angle = 0
-    
-    if (check_specific_case("at_least_one_extreme_turn")):
-        if targetSens == "forward":
-            turning_angle = int(90 - step)
-        else:
-            turning_angle = int(90 + step)
-        fw.turn(turning_angle)
-        
+def adjust_angle(lt_status_now =[0,0,0,0,0], turning_angle=0, off_track_count=0, step=0):
     
     #### LEFT ####    
-    elif lt_status_now in ([0,1,1,0,0],[0,1,0,0,0],[1,1,0,0,0]):
-        if targetSens == "forward":
-            turning_angle = int(90 - step)
-        else:
-            turning_angle = int(90 + step)
+    if lt_status_now in ([0,1,1,0,0],[0,1,0,0,0],[1,1,0,0,0]):
+        turning_angle = int(90 - step)
         fw.turn(turning_angle)
     
     #### RIGHT ####
     elif lt_status_now in ([0,0,1,1,0],[0,0,0,1,0],[0,0,0,1,1]):
-        if targetSens == "forward":
-            turning_angle = int(90 + step)
-        else:
-            turning_angle = int(90 - step)
+        turning_angle = int(90 + step)
         fw.turn(turning_angle)
     
     #### STRAIGHT ####
@@ -375,21 +364,21 @@ def turnExtreme(isTurnExtremeRight=False, isTurnExtremeLeft=False):
     #### PARAMETRE ####
     global cptTurnExtremeSteps
     global lastSpeedSens 
- 
+    
     #### EXTREME LEFT ####
     if isTurnExtremeLeft and not isTurnExtremeRight:
      
-        #if cptTurnExtremeSteps[0] == 400 : print("isTurnExtremeLeft    onAvance")
-        #if cptTurnExtremeSteps[1] == 249 :print("isTurnExtremeLeft    onRecule")
-        #if cptTurnExtremeSteps[2] == 99: print("isTurnExtremeLeft    onAvanceApresRecule")
-        #if cptTurnExtremeSteps[2] == 1: print("fin")
+        if cptTurnExtremeSteps[0] == 400 : print("isTurnExtremeLeft    onAvance")
+        if cptTurnExtremeSteps[1] == 249 :print("isTurnExtremeLeft    onRecule")
+        if cptTurnExtremeSteps[2] == 99: print("isTurnExtremeLeft    onAvanceApresRecule")
+        if cptTurnExtremeSteps[2] == 1: print("fin")
        
 
         if cptTurnExtremeSteps[0] > 0:
             turning_angle = int(90 - angleLevelAscending[3])
             lastSpeedSens = adjust_speed_and_sens(target_speed=speedLevelDescending[4], lastSpeed=lastSpeedSens[0], increment=5, targetSens="forward", lastSens=lastSpeedSens[1])
             cptTurnExtremeSteps[0] -= 1
-           
+            print(cptTurnExtremeSteps[0])
         elif cptTurnExtremeSteps[1] > 0 and cptTurnExtremeSteps[0] <= 0:
             turning_angle = (- (angleLevelAscending[4] - 90) + 90) * fw.turning_max
             lastSpeedSens = adjust_speed_and_sens(target_speed=speedLevelDescending[4], lastSpeed=lastSpeedSens[0], increment=12, targetSens="backward", lastSens=lastSpeedSens[1])
@@ -403,10 +392,10 @@ def turnExtreme(isTurnExtremeRight=False, isTurnExtremeLeft=False):
 
     #### EXTREME RIGHT ####
     elif isTurnExtremeRight and not isTurnExtremeLeft:
-        #if cptTurnExtremeSteps[0] == 400 : print("isTurnExtremeRight    onAvance")
-        #if cptTurnExtremeSteps[1] == 249 :print("isTurnExtremeRight    onRecule")
-        #if cptTurnExtremeSteps[2] == 99: print("isTurnExtremeRight    onAvanceApresRecule")
-        #if cptTurnExtremeSteps[2] == 1: print("fin")
+        if cptTurnExtremeSteps[0] == 400 : print("isTurnExtremeRight    onAvance")
+        if cptTurnExtremeSteps[1] == 249 :print("isTurnExtremeRight    onRecule")
+        if cptTurnExtremeSteps[2] == 99: print("isTurnExtremeRight    onAvanceApresRecule")
+        if cptTurnExtremeSteps[2] == 1: print("fin")
         
         if cptTurnExtremeSteps[0] > 0:
             turning_angle = int(90 + angleLevelAscending[3])
@@ -453,7 +442,7 @@ def getDistance(prevDistance):
 def obstacle(distance = 0, IsStatusLineCaptorValid = False):
     global cptObstacleSteps, lastSpeedSens, targetSens, isObstacle, speedLevelDescending
 
-    if distance < 30 and cptObstacleSteps == [100, 25, 50, 100, 200]:
+    if distance < 30 and cptObstacleSteps == [100,25, 50, 100, 200]:
         fw.turn(90)
         bw.backward()
         lastSpeedSens = adjust_speed_and_sens(target_speed=speedLevelDescending[4], lastSpeed=lastSpeedSens[0], increment=5, targetSens="backward", lastSens=lastSpeedSens[1])
@@ -462,7 +451,9 @@ def obstacle(distance = 0, IsStatusLineCaptorValid = False):
 
     elif cptObstacleSteps[1] > 0:
         turning_angle = int(90 - angleLevelAscending[3])
+        print(cptObstacleSteps[1])
         fw.turn(turning_angle)
+
         lastSpeedSens = adjust_speed_and_sens(target_speed=speedLevelDescending[4], lastSpeed=lastSpeedSens[0], increment=10, targetSens="forward", lastSens=lastSpeedSens[1])
         bw.forward()
         cptObstacleSteps[1] -= 1
@@ -499,6 +490,10 @@ def reset_compteurs(toReset ="none"):
         cptObstacleSteps =  [100, 25, 50, 100, 200]
     elif toReset == "cptTurnExtremeSteps":
         cptTurnExtremeSteps = [400, 250, 100]
+    elif toReset == "cptStopProgressif":
+        cptStopProgressif = 200
+    elif toReset == "cptStraightAfterExtremeTurn":
+        cptStraightAfterExtremeTurn = 100  
     else:
         print("toReset invalide. Utilisez 'cptObstacleSteps' ou 'cptTurnExtremeSteps'.")
 
@@ -518,24 +513,7 @@ def lt_status_valid(lt_status_now):
     return lt_status_now in valid_states
 
 
-            #  if lt_status_now == [0,0,0,0,0] and check_specific_case("not_a_specific_case"):
-            #    off_track_count += 1
-            #    if off_track_count > max_off_track_count:
-            #        tmp_angle = (turning_angle-90)/abs(90-turning_angle)
-            #        tmp_angle *= fw.turning_max
-            #        bw.speed = backward_speed
-            #        bw.backward()
-            #        fw.turn(tmp_angle)
-                    
-            #        lf.wait_tile_center()
-            #        bw.stop()
 
-            #        fw.turn(turning_angle)
-            #        time.sleep(0.2)
-            #        bw.speed = forward_speed
-            #        bw.forward()
-            #        time.sleep(0.2)
-            #
 
 
 def cali():
