@@ -111,8 +111,13 @@ def main():
             lt_status_now = lf.read_digital()
             IsStatusLineCaptorValid = lt_status_valid(lt_status_now)
     
-
-            
+            if (lt_status_now == [0,0,0,0,0] and check_specific_case("not_a_specific_case")):
+                isStop = True
+                isTurnExtremeLeft = False
+                isTurnExtremeRight = False
+                cptTurnExtremeSteps =  [400, 250, 100]
+                cptStopProgressif = 100
+  
             #distance = getDistance(distance)
             #### ON STOP TOUT ####
             if (lt_status_now == [1,1,1,1,1] and not check_specific_case("isStop")):
@@ -125,61 +130,61 @@ def main():
                 
             
             
-                if (IsStatusLineCaptorValid and check_specific_case("isNotStop_and_isNotObstacle")):
-                # ETAT CAPTEUR VALID
-                    if lt_status_now[2] == 1 and check_specific_case("at_least_one_extreme_turn"):
-                      #### DEFINIR VARIABLE POUR ACCELERATION PROGRESSIVE PENDANT 100 CYCLES ####
-                        cptStraightAfterExtremeTurn = 100
-                                    
-                        print("Basse vitesse apres extremeTurn")
-                        fw.turn(90) # Roue normale
-                        bw.stop() # Arrête les moteurs pour dire que on a finit EXTREME TURN
-                        
-                        lastSpeedSens = (1, "forward") #
-                        isTurnExtremeLeft = False
-                        isTurnExtremeRight = False
-                        cptTurnExtremeSteps =  [400, 250, 100]
-                        
+            if (IsStatusLineCaptorValid and check_specific_case("isNotStop_and_isNotObstacle")):
+            # ETAT CAPTEUR VALID
+                if lt_status_now[2] == 1 and check_specific_case("at_least_one_extreme_turn"):
+                  #### DEFINIR VARIABLE POUR ACCELERATION PROGRESSIVE PENDANT 100 CYCLES ####
+                    cptStraightAfterExtremeTurn = 100
+                                
+                    print("Basse vitesse apres extremeTurn")
+                    fw.turn(90) # Roue normale
+                    bw.stop() # Arrête les moteurs pour dire que on a finit EXTREME TURN
+                    
+                    lastSpeedSens = (1, "forward") #
+                    isTurnExtremeLeft = False
+                    isTurnExtremeRight = False
+                    cptTurnExtremeSteps =  [400, 250, 100]
+                    
 
-                    #### ACCELERATION PROGRESSIVE ####
-                        if cptStraightAfterExtremeTurn > 0: # tant que on a pas atteint 100
-                            print("cptStraightAfterExtremeTurn")
-                            target_speed = speedLevelDescending[4]# tres basse vitesse
-                            cptStraightAfterExtremeTurn -= 1
-                    
-                    
-                    #### MOUVEMENT STRAIGHT NORMAL ####
-                    else:
-                       
-                        target_speed = speedLevelDescending[0]
-                        turning_angle = angleLevelAscending[0]
-                        
-                if lt_status_now == [0,0,1,0,0] and not check_specific_case("at_least_one_extreme_turn"):    
+                #### ACCELERATION PROGRESSIVE ####
+                    if cptStraightAfterExtremeTurn > 0: # tant que on a pas atteint 100
+                        print("cptStraightAfterExtremeTurn")
+                        target_speed = speedLevelDescending[4]# tres basse vitesse
+                        cptStraightAfterExtremeTurn -= 1
+                
+                
+                #### MOUVEMENT STRAIGHT NORMAL ####
+                else:
+                   
                     target_speed = speedLevelDescending[0]
-                    step = angleLevelAscending[0]
+                    turning_angle = angleLevelAscending[0]
                     
-                elif (check_specific_case("not_an_extreme_turn")):
-                    
-                    #### PAS EXTREME TURN ACTIVER ENCORE ####
-                    if lt_status_now not in ([1,0,0,0,0],[0,0,0,0,1]):
-                        if lt_status_now == [0,1,1,0,0] or lt_status_now == [0,0,1,1,0]:
-                            step = angleLevelAscending[1]
-                            target_speed = speedLevelDescending[1]
+            if lt_status_now == [0,0,1,0,0] and not check_specific_case("at_least_one_extreme_turn"):    
+                target_speed = speedLevelDescending[0]
+                step = angleLevelAscending[0]
+                
+            elif (check_specific_case("not_an_extreme_turn")):
+                
+                #### PAS EXTREME TURN ACTIVER ENCORE ####
+                if lt_status_now not in ([1,0,0,0,0],[0,0,0,0,1]):
+                    if lt_status_now == [0,1,1,0,0] or lt_status_now == [0,0,1,1,0]:
+                        step = angleLevelAscending[1]
+                        target_speed = speedLevelDescending[1]
 
-                        elif lt_status_now == [0,1,0,0,0] or lt_status_now == [0,0,0,1,0] :
-                            step = angleLevelAscending[2]
-                            target_speed = speedLevelDescending[2]
+                    elif lt_status_now == [0,1,0,0,0] or lt_status_now == [0,0,0,1,0] :
+                        step = angleLevelAscending[2]
+                        target_speed = speedLevelDescending[2]
 
-                        elif lt_status_now == [1,1,0,0,0] or lt_status_now == [0,0,0,1,1] :
-                            step = angleLevelAscending[3]
-                            target_speed = speedLevelDescending[3]
+                    elif lt_status_now == [1,1,0,0,0] or lt_status_now == [0,0,0,1,1] :
+                        step = angleLevelAscending[3]
+                        target_speed = speedLevelDescending[3]
 
-                    else:
-                        #### ON ACTIVE  EXTREME TURN ####
-                        print("active extreme turn)")
-                        print(lt_status_now)
-                        isTurnExtremeLeft = lt_status_now == [1, 0, 0, 0, 0]
-                        isTurnExtremeRight = lt_status_now == [0, 0, 0, 0, 1]
+                else:
+                    #### ON ACTIVE  EXTREME TURN ####
+                    print("active extreme turn)")
+                    print(lt_status_now)
+                    isTurnExtremeLeft = lt_status_now == [1, 0, 0, 0, 0]
+                    isTurnExtremeRight = lt_status_now == [0, 0, 0, 0, 1]
 
 
 
@@ -238,7 +243,7 @@ def stopProgressif():
     target_speed = 0
       
     if cptStopProgressif > cptStopProgressif/2:
-        print(lastSpeedSens[0])
+        #print(lastSpeedSens[0])
         lastSpeedSens = adjust_speed_and_sens(target_speed=target_speed, lastSpeed=lastSpeedSens[0], increment=2, targetSens="forward", lastSens=lastSpeedSens[1])
         cptStopProgressif-= 1
     elif cptStopProgressif == cptStopProgressif/2:
@@ -350,14 +355,14 @@ def turnExtreme(isTurnExtremeRight=False, isTurnExtremeLeft=False):
         if cptTurnExtremeSteps[0] == 400 : print("isTurnExtremeLeft    onAvance")
         if cptTurnExtremeSteps[1] == 249 :print("isTurnExtremeLeft    onRecule")
         if cptTurnExtremeSteps[2] == 99: print("isTurnExtremeLeft    onAvanceApresRecule")
-        if cptTurnExtremeSteps[2] == 1: print("fin")
+
        
 
         if cptTurnExtremeSteps[0] > 0:
             turning_angle = int(90 - angleLevelAscending[3])
             lastSpeedSens = adjust_speed_and_sens(target_speed=speedLevelDescending[4], lastSpeed=lastSpeedSens[0], increment=5, targetSens="forward", lastSens=lastSpeedSens[1])
             cptTurnExtremeSteps[0] -= 1
-            print(cptTurnExtremeSteps[0])
+           #print(cptTurnExtremeSteps[0])
         elif cptTurnExtremeSteps[1] > 0 and cptTurnExtremeSteps[0] <= 0:
             turning_angle = (- (angleLevelAscending[4] - 90) + 90) * fw.turning_max
             lastSpeedSens = adjust_speed_and_sens(target_speed=speedLevelDescending[4], lastSpeed=lastSpeedSens[0], increment=12, targetSens="backward", lastSens=lastSpeedSens[1])
@@ -374,14 +379,14 @@ def turnExtreme(isTurnExtremeRight=False, isTurnExtremeLeft=False):
         if cptTurnExtremeSteps[0] == 400 : print("isTurnExtremeRight    onAvance")
         if cptTurnExtremeSteps[1] == 249 :print("isTurnExtremeRight    onRecule")
         if cptTurnExtremeSteps[2] == 99: print("isTurnExtremeRight    onAvanceApresRecule")
-        if cptTurnExtremeSteps[2] == 1: print("fin")
+   
         
         if cptTurnExtremeSteps[0] > 0:
             turning_angle = int(90 + angleLevelAscending[3])
             lastSpeedSens = adjust_speed_and_sens(target_speed=speedLevelDescending[4], lastSpeed=lastSpeedSens[0], increment=5, targetSens="forward", lastSens=lastSpeedSens[1])
             cptTurnExtremeSteps[0] -= 1
             
-            print(cptTurnExtremeSteps[0])
+            #print(cptTurnExtremeSteps[0])
             
         elif cptTurnExtremeSteps[1] > 0 and cptTurnExtremeSteps[0] <= 0 :
             turning_angle = (angleLevelAscending[4] - 90) / abs(90 - angleLevelAscending[4]) * fw.turning_max
@@ -393,9 +398,9 @@ def turnExtreme(isTurnExtremeRight=False, isTurnExtremeLeft=False):
             lastSpeedSens = adjust_speed_and_sens(target_speed=speedLevelDescending[4], lastSpeed=lastSpeedSens[0], increment=2, targetSens="forward", lastSens=lastSpeedSens[1])
             cptTurnExtremeSteps[2] -= 1
 
-    if cptTurnExtremeSteps[2] <= 0:   
+    if cptTurnExtremeSteps[2] <= 0:
        cptTurnExtremeSteps = [400, 250, 100]
-  
+       print("fin")
        
     else:
       fw.turn(turning_angle)
@@ -549,4 +554,6 @@ if __name__ == '__main__':
             time.sleep(5)
     except KeyboardInterrupt:
         destroy()
+
+
 
