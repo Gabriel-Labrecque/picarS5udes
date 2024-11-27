@@ -59,9 +59,10 @@ cptStopProgressif = 0
 cptTurnExtremeSteps = [400, 250, 100]
 angleLevelAscending = [0, 3, 10, 30, 45]
 speedLevelDescending = [50, 45, 40, 35, 30]
+
+
 cptFindSteps = 0
 rayon_cercle = 20
-cercle_en_cours = False
 wheel_base = 15
 
 
@@ -259,22 +260,27 @@ def stopProgressif():
 
 
 def find_line():
-    global cptFindSteps,cercle_en_cours,rayon_cercle
+    global cptFindSteps,rayon_cercle
 
     steering_angle = math.asin(wheel_base/rayon_cercle)
-    print(steering_angle)
-    if not cercle_en_cours and cptFindSteps < rayon_cercle:
-        #adjust_speed_and_sens(target_speed=30,lastSpeed=lastSpeedSens)
+
+    if cptFindSteps % 20 == 0 :
+        rayon_cercle *= 1.5
+
+    else :
+        fw.turn(90-math.degrees(steering_angle))
+        lastSpeedSens = adjust_speed_and_sens(30,lastSpeedSens[0],lastSens=lastSpeedSens[1])
         cptFindSteps +=1
-        print("going to circle radius")
-    elif not cercle_en_cours and cptFindSteps >= rayon_cercle:
-        cercle_en_cours = True
-        cptFindSteps = 0
-    if cercle_en_cours :
+
+    
         
-        fw.turn(math.degrees(steering_angle))
-        adjust_speed_and_sens(30)
-        print("turning wheels")
+
+
+
+
+    
+
+
 
 
 
