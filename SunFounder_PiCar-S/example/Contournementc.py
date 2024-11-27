@@ -259,7 +259,7 @@ def stopProgressif():
 
 
 def find_line():
-    global cptFindSteps
+    global cptFindSteps,cercle_en_cours,rayon_cercle
 
     steering_angle = math.asin(wheel_base/rayon_cercle)
     print(steering_angle)
@@ -271,8 +271,10 @@ def find_line():
         cercle_en_cours = True
         cptFindSteps = 0
     if cercle_en_cours :
-        adjust_angle(turning_angle=steering_angle,step=cptFindSteps)
+        
+        fw.turn(math.degrees(steering_angle))
         print("turning wheels")
+
 
 
 
