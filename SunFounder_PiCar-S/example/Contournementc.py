@@ -203,6 +203,7 @@ def main():
                     
             else: #### LOST TRACK ETAT CAPTEUR NON VALID ####
                 print("lost track")
+                find_line()
                 off_track_count = +1
 
             time.sleep(delay)
@@ -253,6 +254,9 @@ def stopProgressif():
         
     else: isStop = False 
 
+
+def find_line():
+    stop()
    
 def stop():
     bw.stop()
