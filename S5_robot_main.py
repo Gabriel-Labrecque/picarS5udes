@@ -4,6 +4,29 @@ header
 
 '''
 
+from SunFounder_Ultrasonic_Avoidance import Ultrasonic_Avoidance
+from SunFounder_Line_Follower import Line_Follower
+from picar import front_wheels
+from picar import back_wheels
+import time
+import picar
+import threading
+import math
+
+
+picar.setup()
+
+fw = front_wheels.Front_Wheels(db='config')
+bw = back_wheels.Back_Wheels(db='config')
+lf = Line_Follower.Line_Follower()
+
+REFERENCES = [42.5, 43.0, 37.5, 48.0, 41.0]
+lf.references = REFERENCES
+bw.ready()
+fw.ready()
+fw.turning_max = 45
+
+
 class LineState:
     straight = 0
     reverseRight = -3 # reversing phase of a right turn (wheel point left)
@@ -309,16 +332,39 @@ def Drive(_drive_mode):
     elif _drive_mode == DrivingState.DrivingStateLost:
         print("Drive(): placeholder DrivingStateLost")
 
-
+TempSpeedBuffer = 0
+TempAngleBuffer = 0
 def SetDriveTarget(wheel_speed, wheel_angle):
+    global TempSpeedBuffer, TempAngleBuffer
+
     print('[ SetDriveTarget() ] target speed: ' + str(wheel_speed) + ' , target angle: ' + str(wheel_angle))
     # call smoothing logic
         # compute speed limit with both current and target steer angle and choose the lowest
+    TempSpeedBuffer = (TempSpeedBuffer * 0.9) + (wheel_speed * 0.1)
+    TempAngleBuffer = (TempAngleBuffer * 0.8) + (wheel_angle * 0.2)
+    smooth_speed = int(TempSpeedBuffer)
+    smooth_angle = int(TempAngleBuffer)
+
+
     # call actual car function
+    if smooth_speed == 0:
+        bw.speed = 0
+        bw.stop()
+    elif smooth_speed > 0:
+        bw.speed = smooth_speed
+        bw.forward()
+    else:
+        bw.speed = smooth_speed
+        bw.backward()
+
+    fw.turn(smooth_angle)
+
 
 def InitCar():
     # init picar
-
+    bw.speed = 0
+    bw.forward()
+    fw.turn(0)
     # init global variable
     global ModeLineFollower
     ModeLineFollower.CurrentMode = LineState.straight

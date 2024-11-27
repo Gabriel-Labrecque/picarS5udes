@@ -1,0 +1,6 @@
+{
+    "python.analysis.extraPaths": [
+        "./SunFounder_PiCar-S/example",
+        "./SunFounder_PiCar"
+    ]
+}
