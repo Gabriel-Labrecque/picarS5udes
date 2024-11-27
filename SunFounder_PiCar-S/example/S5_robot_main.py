@@ -71,8 +71,8 @@ class LineState:
             self.LineFoundCounter = self.LineFoundCounter + 1
         if self.LineLostCounter > 2:
             self.LineFoundCounter = 0
-        if self.LineFoundCounter > 2:
-            self.LineLostCounter = 0
+        #if self.LineFoundCounter > 2:
+        #    self.LineLostCounter = 0
 
         # get intended action
         if self.CurrentMode == LineState.straight:
@@ -369,16 +369,21 @@ def SetDriveTarget(wheel_speed, wheel_angle, delta_t):
     TempAngleBuffer = (TempAngleBuffer * 0.8) + (wheel_angle * 0.2)
     smooth_speed = int(TempSpeedBuffer)
     smooth_angle = int(TempAngleBuffer)
+    direction = 0
+    if smooth_speed > 0: direction = 1
+    elif smooth_speed < 0: direction = -1
+    if smooth_speed < -99: smooth_speed = -99
+    if smooth_speed > 99: smooth_speed = 99
 
     # call actual car function
-    if smooth_speed == 0:
+    if direction == 0:
         bw.speed = 0
         bw.stop()
-    elif smooth_speed > 0:
+    elif direction > 0:
         bw.speed = smooth_speed
         bw.forward()
     else:
-        bw.speed = smooth_speed
+        bw.speed = (-1) * smooth_speed
         bw.backward()
 
     fw.turn(int(90 + smooth_angle))
@@ -419,6 +424,7 @@ if __name__ == '__main__':
             Drive(drive_mode, delta_t)
     except Exception as e:
         print('ERROR CATCHED: ')
+        print(e)
         TerminateCar()
     except KeyboardInterrupt:
         TerminateCar()
