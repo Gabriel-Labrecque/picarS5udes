@@ -39,10 +39,12 @@ class LineState:
     TargetSpeed = 0
     TargetAngle = 0
     LineLostCounter = 5 # counter of "time" since the line was last seen
+    LineFoundCounter = 0
     CurrentMode = straight
 
     def __init__(self):
         self.LineLostCounter = 0
+        self.LineFoundCounter = 0
         self.CurrentMode = self.straight
 
     def SetDriveTarget(self, _speed, _angle):
@@ -53,7 +55,7 @@ class LineState:
         if force_reset:
             self.CurrentMode = LineState.straight
 
-        new_line_state = self.CurrentMode
+        new_line_state = int(self.CurrentMode)
         # -----------
         # ok nah screw this, I should have 1 function per possible state
         # and each function should decide on their own
@@ -65,6 +67,12 @@ class LineState:
             # maybe do some check on very important case like [0,0,0,0,0] or [1,1,1,1,1]
         if sensor_status == [0,0,0,0,0]:
             self.LineLostCounter = self.LineLostCounter + 1
+        else:
+            self.LineFoundCounter = self.LineFoundCounter + 1
+        if self.LineLostCounter > 2:
+            self.LineFoundCounter = 0
+        if self.LineFoundCounter > 2:
+            self.LineLostCounter = 0
 
         # get intended action
         if self.CurrentMode == LineState.straight:
@@ -86,9 +94,10 @@ class LineState:
             new_line_state = self.ModeReverseLeft(self.CurrentMode, sensor_status)
 
         # check if state changed
-        print('new state: ' + str(new_line_state) + ' , old state: ' + str(new_line_state))
+        print('new state: ' + str(new_line_state) + ' , old state: ' + str(self.CurrentMode))
         if new_line_state != self.CurrentMode: # the state has changed
             self.LineLostCounter = 0 # reset line lost counter
+            self.LineFoundCounter = 0
         print('line lost for ' + str(self.LineLostCounter) + ' cycle')
 
         self.CurrentMode = new_line_state
@@ -96,7 +105,7 @@ class LineState:
     
         
     def ModeStraight(self, line_mode, line_sensor):
-        new_line_mode = line_mode
+        new_line_mode = int(line_mode)
 
         # check for next state
         if line_sensor in ([0,0,1,0,0],[0,0,0,0,0]):
@@ -117,10 +126,10 @@ class LineState:
         return new_line_mode
 
     def ModeInnerRight(self, line_mode, line_sensor):
-        new_line_mode = line_mode
+        new_line_mode = int(line_mode)
 
         # check for next state
-        if line_sensor in ([0,0,1,0,0]):
+        if line_sensor == [0,0,1,0,0]:
             new_line_mode = LineState.straight
         elif line_sensor in ([0,0,0,1,0],[0,0,1,1,0],[0,0,0,0,0]):
             new_line_mode = LineState.innerRight
@@ -138,10 +147,10 @@ class LineState:
         return new_line_mode
 
     def ModeInnerLeft(self, line_mode, line_sensor):
-        new_line_mode = line_mode
+        new_line_mode = int(line_mode)
 
         # check for next state
-        if line_sensor in ([0,0,1,0,0]):
+        if line_sensor == [0,0,1,0,0]:
             new_line_mode = LineState.straight
         elif line_sensor in ([0,0,0,1,0],[0,0,1,1,0]):
             new_line_mode = LineState.innerRight
@@ -234,10 +243,10 @@ class LineState:
         new_line_mode = int(line_mode)
 
         # LineLostCounter used because it gets reset at the same time we start reversing
-        if line_sensor not in ([0,0,0,0,0]):
+        if line_sensor != [0,0,0,0,0]:
             # line found
             new_line_mode = LineState.outerRight # good enough state, it will get changed again next loop
-            self.SetDriveTarget(30, 45)
+            self.SetDriveTarget(0, 0)
         elif self.LineLostCounter < 100:
             # keep reversing
             new_line_mode = LineState.reverseRight
@@ -261,7 +270,7 @@ class LineState:
         new_line_mode = int(line_mode)
 
         # LineLostCounter used because it gets reset at the same time we start reversing
-        if line_sensor not in ([0,0,0,0,0]):
+        if line_sensor != [0,0,0,0,0]:
             # line found
             new_line_mode = LineState.outerLeft # good enough state, it will get changed again next loop
             self.SetDriveTarget(0, 0)
@@ -409,7 +418,7 @@ if __name__ == '__main__':
             # drive the car
             Drive(drive_mode, delta_t)
     except Exception as e:
-        print('ERROR CATCHED: ' + e)
+        print('ERROR CATCHED: ')
         TerminateCar()
     except KeyboardInterrupt:
         TerminateCar()
