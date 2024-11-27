@@ -273,6 +273,7 @@ def find_line():
     if cercle_en_cours :
         
         fw.turn(math.degrees(steering_angle))
+        adjust_speed_and_sens(30)
         print("turning wheels")
 
 
