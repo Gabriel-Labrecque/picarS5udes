@@ -201,7 +201,8 @@ def main():
             
     
                     
-            else: #### LOST TRACK ETAT CAPTEUR NON VALID #### 
+            else: #### LOST TRACK ETAT CAPTEUR NON VALID ####
+                print("lost track")
                 off_track_count = +1
 
             time.sleep(delay)
