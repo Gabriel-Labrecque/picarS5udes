@@ -20,7 +20,7 @@ fw = front_wheels.Front_Wheels(db='config')
 bw = back_wheels.Back_Wheels(db='config')
 lf = Line_Follower.Line_Follower()
 
-REFERENCES = [42.5, 43.0, 37.5, 48.0, 41.0]
+REFERENCES = [30.0, 29.5, 25.0, 34.0, 29.0]
 lf.references = REFERENCES
 bw.ready()
 fw.ready()
@@ -54,7 +54,7 @@ class LineState:
             self.CurrentMode = LineState.straight
 
         new_line_state = self.CurrentMode
-        #-----------
+        # -----------
         # ok nah screw this, I should have 1 function per possible state
         # and each function should decide on their own
         # how state transition should work
@@ -309,7 +309,7 @@ class DrivingState:
 #
 ModeLineFollower = LineState()
 
-def Drive(_drive_mode):
+def Drive(_drive_mode, delta_t):
     global ModeLineFollower
 
     if _drive_mode == DrivingState.DrivingStateLine:
@@ -318,7 +318,7 @@ def Drive(_drive_mode):
         ModeLineFollower.LineDrive()
         target_speed = ModeLineFollower.TargetSpeed
         target_angle = ModeLineFollower.TargetAngle
-        SetDriveTarget(target_speed, target_angle)
+        SetDriveTarget(target_speed, target_angle, delta_t)
 
     elif _drive_mode == DrivingState.DrivingStateBrake:
         # call the braking methode
@@ -330,13 +330,13 @@ def Drive(_drive_mode):
         print("Drive(): placeholder DrivingStateObstacle")
     elif _drive_mode == DrivingState.DrivingStateFinal:
         print("Drive(): placeholder DrivingStateFinal")
-        SetDriveTarget(0, 0)
+        SetDriveTarget(0, 0, delta_t)
     elif _drive_mode == DrivingState.DrivingStateLost:
         print("Drive(): placeholder DrivingStateLost")
 
 TempSpeedBuffer = 0
 TempAngleBuffer = 90
-def SetDriveTarget(wheel_speed, wheel_angle):
+def SetDriveTarget(wheel_speed, wheel_angle, delta_t):
     global TempSpeedBuffer, TempAngleBuffer
 
     print('[ SetDriveTarget() ] target speed: ' + str(wheel_speed) + ' , target angle: ' + str(wheel_angle))
@@ -373,12 +373,17 @@ def InitCar():
 if __name__ == '__main__':
     driving_state = DrivingState()
     InitCar()
+    last_time = time.process_time
+    delta_t = last_time # delta time
+    
 
     while(True):
         # get time elapsed
-        
+        new_time = time.process_time()
+        delta_t = new_time - last_time
+        last_time = new_time
         # update driving mode
         drive_mode = driving_state.CheckDrivingMode()
 
         # drive the car
-        Drive(drive_mode)
+        Drive(drive_mode, delta_t)
