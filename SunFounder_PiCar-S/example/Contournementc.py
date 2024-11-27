@@ -62,6 +62,8 @@ speedLevelDescending = [50, 45, 40, 35, 30]
 cptFindSteps = 0
 rayon_cercle = 20
 cercle_en_cours = False
+wheel_base = 15
+
 
 lastSpeedSens = (1, "forward") 
 
@@ -259,8 +261,16 @@ def stopProgressif():
 def find_line():
     global cptFindSteps
 
-    if not cercle_en_cours :
-        adjust_speed_and_sens()
+    steering_angle = math.asin(wheel_base/rayon_cercle)
+    print(steering_angle)
+    if not cercle_en_cours and cptFindSteps < rayon_cercle:
+        adjust_speed_and_sens(target_speed=30,lastSpeed=lastSpeedSens)
+        cptFindSteps +=1
+    elif not cercle_en_cours and cptFindSteps >= rayon_cercle:
+        cercle_en_cours = True
+        cptFindSteps = 0
+    if cercle_en_cours :
+        adjust_angle(turning_angle=steering_angle)
 
 
 
