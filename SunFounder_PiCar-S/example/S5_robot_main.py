@@ -376,20 +376,29 @@ def InitCar():
     global ModeLineFollower
     ModeLineFollower.CurrentMode = LineState.straight
 
+def TerminateCar():
+    bw.speed = 0
+    bw.stop()
+    fw.turn(90)
+
 if __name__ == '__main__':
-    driving_state = DrivingState()
-    InitCar()
-    last_time = time.process_time()
-    delta_t = last_time # delta time
-    
+    try:
+        driving_state = DrivingState()
+        InitCar()
+        last_time = time.process_time()
+        delta_t = last_time # delta time
+        
 
-    while(True):
-        # get time elapsed
-        new_time = time.process_time()
-        delta_t = new_time - last_time
-        last_time = new_time
-        # update driving mode
-        drive_mode = driving_state.CheckDrivingMode()
+        while(True):
+            # get time elapsed
+            new_time = time.process_time()
+            delta_t = new_time - last_time
+            last_time = new_time
+            # update driving mode
+            drive_mode = driving_state.CheckDrivingMode()
 
-        # drive the car
-        Drive(drive_mode, delta_t)
+            # drive the car
+            Drive(drive_mode, delta_t)
+    except Exception as e:
+        print('ERROR CATCHED: ' + e)
+        TerminateCar()
