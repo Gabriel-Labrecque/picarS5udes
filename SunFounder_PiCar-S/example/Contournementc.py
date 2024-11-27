@@ -248,19 +248,13 @@ def find_line():
     global cptFindSteps,rayon_cercle
 
     steering_angle = math.asin(wheel_base/rayon_cercle)
-<<<<<<< HEAD
-    #print(steering_angle)
-    if not cercle_en_cours and cptFindSteps < rayon_cercle:
-        #adjust_speed_and_sens(target_speed=30,lastSpeed=lastSpeedSens)
-=======
+
 
     if cptFindSteps % 20 == 0 :
         rayon_cercle *= 1.5
-
     else :
         fw.turn(90-math.degrees(steering_angle))
         lastSpeedSens = adjust_speed_and_sens(30,lastSpeedSens[0],lastSens=lastSpeedSens[1])
->>>>>>> cd257a72d80d915f46e19aaae3d95c3e1fb7da77
         cptFindSteps +=1
 
     
