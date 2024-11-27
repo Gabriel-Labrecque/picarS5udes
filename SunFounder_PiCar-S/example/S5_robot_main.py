@@ -162,14 +162,14 @@ class LineState:
         new_line_mode = int(line_mode)
 
         # check if line is lost ( this covers the case [0,0,0,0,0] )
-        if self.LineLostCounter > 100: # TODO: replace 10 by a proper timer <-------------
+        if 100 < self.LineLostCounter < 150: # TODO: replace 10 by a proper timer <-------------
             # the line is lost
             # try to slow down and be ready to reverse
             print('change state OuterRight->OuterRight')
             new_line_mode = LineState.outerRight
             self.SetDriveTarget(20, 45)
             return new_line_mode
-        elif self.LineLostCounter > 150: # TODO: replace 20 by a proper timer <-------------
+        elif self.LineLostCounter >= 150: # TODO: replace 20 by a proper timer <-------------
             # line is fully lost, change mode
             print('change state OuterRight->reverseRight')
             new_line_mode = LineState.reverseRight
@@ -198,14 +198,14 @@ class LineState:
         new_line_mode = int(line_mode)
 
         # check if line is lost ( this covers the case [0,0,0,0,0] )
-        if self.LineLostCounter > 100: # TODO: replace 10 by a proper timer <-------------
+        if 100 < self.LineLostCounter < 150: # TODO: replace 10 by a proper timer <-------------
             # the line is lost
             # try to slow down and be ready to reverse
             print('change state OuterLeft->OuterLeft')
             new_line_mode = LineState.outerLeft
             self.SetDriveTarget(20, -45)
             return new_line_mode
-        elif self.LineLostCounter > 150: # TODO: replace 20 by a proper timer <-------------
+        elif self.LineLostCounter >= 150: # TODO: replace 20 by a proper timer <-------------
             # line is fully lost, change mode
             print('change state OuterLeft->reverseLeft')
             new_line_mode = LineState.reverseLeft
