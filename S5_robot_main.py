@@ -335,7 +335,7 @@ def Drive(_drive_mode):
         print("Drive(): placeholder DrivingStateLost")
 
 TempSpeedBuffer = 0
-TempAngleBuffer = 0
+TempAngleBuffer = 90
 def SetDriveTarget(wheel_speed, wheel_angle):
     global TempSpeedBuffer, TempAngleBuffer
 
@@ -346,7 +346,6 @@ def SetDriveTarget(wheel_speed, wheel_angle):
     TempAngleBuffer = (TempAngleBuffer * 0.8) + (wheel_angle * 0.2)
     smooth_speed = int(TempSpeedBuffer)
     smooth_angle = int(TempAngleBuffer)
-
 
     # call actual car function
     if smooth_speed == 0:
