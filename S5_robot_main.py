@@ -159,14 +159,15 @@ class LineState:
     def ModeOuterRight(self, line_mode, line_sensor):
         new_line_mode = int(line_mode)
 
+        print('line lost for ' + str(self.LineLostCounter) + ' cycle')
         # check if line is lost ( this covers the case [0,0,0,0,0] )
-        if self.LineLostCounter > 10: # TODO: replace 10 by a proper timer <-------------
+        if self.LineLostCounter > 100: # TODO: replace 10 by a proper timer <-------------
             # the line is lost
             # try to slow down and be ready to reverse
             new_line_mode = LineState.outerRight
             self.SetDriveTarget(20, 45)
             return new_line_mode
-        elif self.LineLostCounter > 20: # TODO: replace 20 by a proper timer <-------------
+        elif self.LineLostCounter > 150: # TODO: replace 20 by a proper timer <-------------
             # line is fully lost, change mode
             new_line_mode = LineState.reverseRight
             self.SetDriveTarget(0, 0)
@@ -193,14 +194,15 @@ class LineState:
     def ModeOuterLeft(self, line_mode, line_sensor):
         new_line_mode = int(line_mode)
 
+        print('line lost for ' + str(self.LineLostCounter) + ' cycle')
         # check if line is lost ( this covers the case [0,0,0,0,0] )
-        if self.LineLostCounter > 10: # TODO: replace 10 by a proper timer <-------------
+        if self.LineLostCounter > 100: # TODO: replace 10 by a proper timer <-------------
             # the line is lost
             # try to slow down and be ready to reverse
             new_line_mode = LineState.outerLeft
             self.SetDriveTarget(20, -45)
             return new_line_mode
-        elif self.LineLostCounter > 20: # TODO: replace 20 by a proper timer <-------------
+        elif self.LineLostCounter > 150: # TODO: replace 20 by a proper timer <-------------
             # line is fully lost, change mode
             new_line_mode = LineState.reverseLeft
             self.SetDriveTarget(0, 0)
@@ -373,7 +375,7 @@ def InitCar():
 if __name__ == '__main__':
     driving_state = DrivingState()
     InitCar()
-    last_time = time.process_time
+    last_time = time.process_time()
     delta_t = last_time # delta time
     
 
