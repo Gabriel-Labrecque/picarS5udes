@@ -72,11 +72,11 @@ class LineState:
 
         elif self.CurrentMode == LineState.innerRight:
             new_line_state = self.ModeInnerRight(self.CurrentMode, sensor_status)
-        elif self.CurrentMode == LineState.outerRight:
-            new_line_state = self.ModeOuterRight(self.CurrentMode, sensor_status)
-
         elif self.CurrentMode == LineState.innerLeft:
             new_line_state = self.ModeInnerLeft(self.CurrentMode, sensor_status)
+
+        elif self.CurrentMode == LineState.outerRight:
+            new_line_state = self.ModeOuterRight(self.CurrentMode, sensor_status)
         elif self.CurrentMode == LineState.outerLeft:
             new_line_state = self.ModeOuterLeft(self.CurrentMode, sensor_status)
 
@@ -89,6 +89,7 @@ class LineState:
         print('new state: ' + str(new_line_state) + ' , old state: ' + str(new_line_state))
         if new_line_state != self.CurrentMode: # the state has changed
             self.LineLostCounter = 0 # reset line lost counter
+        print('line lost for ' + str(self.LineLostCounter) + ' cycle')
 
         self.CurrentMode = new_line_state
         return self.CurrentMode
@@ -160,7 +161,6 @@ class LineState:
     def ModeOuterRight(self, line_mode, line_sensor):
         new_line_mode = int(line_mode)
 
-        print('line lost for ' + str(self.LineLostCounter) + ' cycle')
         # check if line is lost ( this covers the case [0,0,0,0,0] )
         if self.LineLostCounter > 100: # TODO: replace 10 by a proper timer <-------------
             # the line is lost
@@ -197,16 +197,17 @@ class LineState:
     def ModeOuterLeft(self, line_mode, line_sensor):
         new_line_mode = int(line_mode)
 
-        print('line lost for ' + str(self.LineLostCounter) + ' cycle')
         # check if line is lost ( this covers the case [0,0,0,0,0] )
         if self.LineLostCounter > 100: # TODO: replace 10 by a proper timer <-------------
             # the line is lost
             # try to slow down and be ready to reverse
+            print('change state OuterLeft->OuterLeft')
             new_line_mode = LineState.outerLeft
             self.SetDriveTarget(20, -45)
             return new_line_mode
         elif self.LineLostCounter > 150: # TODO: replace 20 by a proper timer <-------------
             # line is fully lost, change mode
+            print('change state OuterLeft->reverseLeft')
             new_line_mode = LineState.reverseLeft
             self.SetDriveTarget(0, 0)
             return new_line_mode
@@ -319,7 +320,7 @@ def Drive(_drive_mode, delta_t):
 
     if _drive_mode == DrivingState.DrivingStateLine:
         # call the line-following methode
-        print("Drive(): DrivingStateLine")
+        # print("Drive(): DrivingStateLine")
         ModeLineFollower.LineDrive()
         target_speed = ModeLineFollower.TargetSpeed
         target_angle = ModeLineFollower.TargetAngle
@@ -369,7 +370,7 @@ def SetDriveTarget(wheel_speed, wheel_angle, delta_t):
 def InitCar():
     # init picar
     bw.speed = 0
-    bw.forward()
+    bw.stop()
     fw.turn(90)
     # init global variable
     global ModeLineFollower
