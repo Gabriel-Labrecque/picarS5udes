@@ -20,7 +20,7 @@ fw = front_wheels.Front_Wheels(db='config')
 bw = back_wheels.Back_Wheels(db='config')
 lf = Line_Follower.Line_Follower()
 
-REFERENCES = [30.0, 29.5, 25.0, 34.0, 29.0]
+REFERENCES = [30.0, 29.5, 30.0, 34.0, 29.0]
 lf.references = REFERENCES
 bw.ready()
 fw.ready()
@@ -120,7 +120,7 @@ class LineState:
             new_line_mode = LineState.outerLeft
 
         # move the car
-        self.SetDriveTarget(60, 0)
+        self.SetDriveTarget(50, 0)
 
         # return the new LineState, or the current one if there's no change
         return new_line_mode
@@ -176,7 +176,7 @@ class LineState:
             # try to slow down and be ready to reverse
             print('change state OuterRight->OuterRight')
             new_line_mode = LineState.outerRight
-            self.SetDriveTarget(20, 45)
+            self.SetDriveTarget(30, 45)
             return new_line_mode
         elif self.LineLostCounter >= 150: # TODO: replace 20 by a proper timer <-------------
             # line is fully lost, change mode
@@ -198,7 +198,7 @@ class LineState:
             new_line_mode = LineState.outerLeft
 
         # move the car
-        self.SetDriveTarget(30, 45)
+        self.SetDriveTarget(40, 45)
 
         # return the new LineState, or the current one if there's no change
         return new_line_mode
@@ -212,7 +212,7 @@ class LineState:
             # try to slow down and be ready to reverse
             print('change state OuterLeft->OuterLeft')
             new_line_mode = LineState.outerLeft
-            self.SetDriveTarget(20, -45)
+            self.SetDriveTarget(30, -45)
             return new_line_mode
         elif self.LineLostCounter >= 150: # TODO: replace 20 by a proper timer <-------------
             # line is fully lost, change mode
@@ -234,7 +234,7 @@ class LineState:
             new_line_mode = LineState.outerLeft
 
         # move the car
-        self.SetDriveTarget(30, -45)
+        self.SetDriveTarget(40, -45)
 
         # return the new LineState, or the current one if there's no change
         return new_line_mode
@@ -250,11 +250,11 @@ class LineState:
         elif self.LineLostCounter < 100:
             # keep reversing
             new_line_mode = LineState.reverseRight
-            self.SetDriveTarget(-30, -45)
+            self.SetDriveTarget(-40, -45)
         elif self.LineLostCounter < 150:
             # start slowing down again
             new_line_mode = LineState.reverseRight
-            self.SetDriveTarget(-20, -30)
+            self.SetDriveTarget(-30, -30)
         elif self.LineLostCounter >= 150:
             # reversing for long enough, start going forward again
             new_line_mode = LineState.outerRight
@@ -262,7 +262,7 @@ class LineState:
         else:
             # keep reversing
             new_line_mode = LineState.reverseRight
-            self.SetDriveTarget(-30, -45)
+            self.SetDriveTarget(-40, -45)
 
         return new_line_mode
 
@@ -277,11 +277,11 @@ class LineState:
         elif self.LineLostCounter < 100:
             # keep reversing
             new_line_mode = LineState.reverseLeft
-            self.SetDriveTarget(-30, 45)
+            self.SetDriveTarget(-40, 45)
         elif self.LineLostCounter < 150:
             # start slowing down again
             new_line_mode = LineState.reverseLeft
-            self.SetDriveTarget(-20, 30)
+            self.SetDriveTarget(-30, 30)
         elif self.LineLostCounter >= 150:
             # reversing for long enough, start going forward again
             new_line_mode = LineState.outerLeft
@@ -289,7 +289,7 @@ class LineState:
         else:
             # keep reversing
             new_line_mode = LineState.reverseLeft
-            self.SetDriveTarget(-30, 45)
+            self.SetDriveTarget(-40, 45)
 
         return new_line_mode
 
