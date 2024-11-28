@@ -243,8 +243,3 @@ class LineState:
             self.SetDriveTarget(-30, 45)
 
         return new_line_mode
-
-
-if __name__ == '__main__':
-    tempTest = LineState()
-    tempTest.TestFunction()

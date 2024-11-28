@@ -357,18 +357,25 @@ def Drive(_drive_mode, delta_t):
     elif _drive_mode == DrivingState.DrivingStateLost:
         print("Drive(): placeholder DrivingStateLost")
 
-TempSpeedBuffer = 0
-TempAngleBuffer = 90
+#TempSpeedBuffer = 0
+#TempAngleBuffer = 90
+LastSpeed = 0
+LastAngle = 0
 def SetDriveTarget(wheel_speed, wheel_angle, delta_t):
-    global TempSpeedBuffer, TempAngleBuffer
+    #global TempSpeedBuffer, TempAngleBuffer
+    global LastSpeed, LastAngle
 
     print('[ SetDriveTarget() ] target speed: ' + str(wheel_speed) + ' , target angle: ' + str(wheel_angle))
     # call smoothing logic
         # compute speed limit with both current and target steer angle and choose the lowest
-    TempSpeedBuffer = (TempSpeedBuffer * 0.9) + (wheel_speed * 0.1)
-    TempAngleBuffer = (TempAngleBuffer * 0.8) + (wheel_angle * 0.2)
-    smooth_speed = int(TempSpeedBuffer)
-    smooth_angle = int(TempAngleBuffer)
+    #TempSpeedBuffer = (TempSpeedBuffer * 0.9) + (wheel_speed * 0.1)
+    #TempAngleBuffer = (TempAngleBuffer * 0.8) + (wheel_angle * 0.2)
+    #smooth_speed = int(TempSpeedBuffer)
+    #smooth_angle = int(TempAngleBuffer)
+    ComputeAccel(wheel_speed, wheel_angle, delta_t)
+    smooth_speed = int(LastSpeed)
+    smooth_angle = int(LastAngle)
+
     direction = 0
     if smooth_speed > 0: direction = 1
     elif smooth_speed < 0: direction = -1
@@ -383,10 +390,35 @@ def SetDriveTarget(wheel_speed, wheel_angle, delta_t):
         bw.speed = smooth_speed
         bw.forward()
     else:
-        bw.speed = (-1) * smooth_speed
+        bw.speed = abs( smooth_speed )
         bw.backward()
 
     fw.turn(int(90 + smooth_angle))
+
+def ComputeAccel(wheel_speed, wheel_angle, delta_t):
+    global LastSpeed, LastAngle
+    CORRECTION_RATE = 0.05
+
+    step_limit_speed = CORRECTION_RATE / delta_t # move a base amount every cycle
+    step_limit_angle = 2.0 * CORRECTION_RATE / delta_t # move a base amount every cycle
+
+    # limit acceleration when turning a lot
+    step_limit_speed = step_limit_speed * abs(math.sin( math.radians(LastAngle) ) )
+    # limit wheel angle turn when going fast (0.5 at full speed, 1.0 at no speed)
+    step_limit_angle = step_limit_angle * ((50 + abs(LastSpeed / 2)) / 100) 
+
+    speed_delta = wheel_speed - LastSpeed
+    if speed_delta < (0-step_limit_speed): speed_delta = 0 - step_limit_speed
+    if speed_delta > (0+step_limit_speed): speed_delta = 0 + step_limit_speed
+
+    angle_delta = wheel_angle - LastAngle
+    if angle_delta < (0-step_limit_angle): angle_delta = 0 - step_limit_angle
+    if angle_delta > (0+step_limit_angle): angle_delta = 0 + step_limit_angle
+
+    LastSpeed = LastSpeed + speed_delta
+    LastAngle = LastAngle + angle_delta
+    print('New speed: ' + str(LastSpeed) + ' , speed_delta: ' + str(speed_delta))
+    print('New angle: ' + str(LastAngle) + ' , angle_delta: ' + str(angle_delta))
 
 
 def InitCar():
@@ -404,19 +436,35 @@ def TerminateCar():
     fw.turn(90)
 
 if __name__ == '__main__':
+    initial_time = 0
+    try:
+        initial_time = time.monotonic()
+    except Exception as e:
+        print('ERROR CATCHED: ')
+        print(e)
+        TerminateCar()
+        print('--- CLOCK IS BROKEN ---')
+
     try:
         driving_state = DrivingState()
         InitCar()
         #last_time = time.process_time()
         #delta_t = last_time # delta time
         
+        last_time = float(initial_time)
 
         while(True):
             # get time elapsed
             #new_time = time.process_time()
             #delta_t = new_time - last_time
             #last_time = new_time
-            delta_t = 1
+            
+            delta_t = 0.1
+            if initial_time != 0:
+                new_time = time.monotonic()
+                delta_t = new_time - last_time
+                last_time = float(new_time)
+
             # update driving mode
             drive_mode = driving_state.CheckDrivingMode()
 

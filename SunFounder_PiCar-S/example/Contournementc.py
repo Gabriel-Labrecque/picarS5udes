@@ -43,10 +43,6 @@ thread_capteurDistance =0
 distance =0
 
 
-
-
-
-
 #calibrate = True
 calibrate = False
 isStop, isObstacle = False, False
