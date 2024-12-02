@@ -91,9 +91,6 @@ class LineState:
         self.TargetSpeed = _speed
         self.TargetAngle = _angle
     
-    def ForceState(self, new_state):
-        self.CurrentMode = int(new_state)
-
     def LineDrive(self, dt=0.1, force_reset=False):
         global SensorLine
         if force_reset:
@@ -528,7 +525,7 @@ def Drive(_drive_mode, delta_t):
         ModeObstacle.ObstacleDrive()
         target_speed = ModeObstacle.TargetSpeed
         target_angle = ModeObstacle.TargetAngle
-        ModeLineFollower.ForceState(LineState.outerRight) # prime the line follower to turn in the right direction
+        ModeLineFollower.CurrentMode = LineState.outerRight # prime the line follower to turn in the right direction
         SetDriveTarget(target_speed, target_angle, delta_t)
         myprint("Drive(): placeholder DrivingStateObstacle")
 
@@ -583,10 +580,13 @@ def ComputeAccel(wheel_speed, wheel_angle, delta_t):
     step_limit_speed = CORRECTION_RATE / delta_t # move a base amount every cycle
     step_limit_angle = 2.0 * CORRECTION_RATE / delta_t # move a base amount every cycle
 
+    # TODO: STEP 1 - Set limits on target speed/angle based on current angle/speed
+    # TODO: STEP 2 - Compute a "shake" factor and reduce [step_limit_speed]/[step_limit_angle] based on it
+
     # limit acceleration when turning a lot
-    # step_limit_speed = step_limit_speed * abs(math.sin( math.radians(LastAngle) ) ) # TODO: THIS CAUSE ERRORS <------------
+        # step_limit_speed = step_limit_speed * abs(math.sin( math.radians(LastAngle) ) ) # TODO: old, to be removed
     # limit wheel angle turn when going fast (0.5 at full speed, 1.0 at no speed)
-    step_limit_angle = step_limit_angle * ((50 + abs(LastSpeed / 2)) / 100) 
+        # step_limit_angle = step_limit_angle * ((50 + abs(LastSpeed / 2)) / 100) 
 
     speed_delta = wheel_speed - LastSpeed
     if speed_delta < (0-step_limit_speed): speed_delta = 0 - step_limit_speed
@@ -596,6 +596,8 @@ def ComputeAccel(wheel_speed, wheel_angle, delta_t):
     if angle_delta < (0-step_limit_angle): angle_delta = 0 - step_limit_angle
     if angle_delta > (0+step_limit_angle): angle_delta = 0 + step_limit_angle
 
+    # TODO: compute a shake factor from [speed_delta]
+    # further reduce the speed adjustement if the shake factor is high
     LastSpeed = LastSpeed + speed_delta
     LastAngle = LastAngle + angle_delta
     myprint('New speed: ' + str(LastSpeed) + ' , speed_delta: ' + str(speed_delta))
@@ -628,6 +630,7 @@ def TerminateCar():
 
 if __name__ == '__main__':
     initial_time = 0
+
     try:
         initial_time = time.monotonic()
     except Exception as e:
@@ -644,9 +647,9 @@ if __name__ == '__main__':
         
         last_time = float(initial_time)
 
-        while(True):
+        while(driving_state.CurrentDrivingState != DrivingState.DrivingStateFinal):
             # read from sensors
-
+            UpdateSensor()
 
             # get time elapsed
             delta_t = 0.1
@@ -660,6 +663,11 @@ if __name__ == '__main__':
 
             # drive the car
             Drive(drive_mode, delta_t)
+        
+        # TODO: ADD A DECELERATION ONCE THE T IS REACHED <--------------------------
+        print('Final state reached, stopping car')
+        TerminateCar()
+
     except Exception as e:
         print('ERROR CATCHED: ')
         print(e)
