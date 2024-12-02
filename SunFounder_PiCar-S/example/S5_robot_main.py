@@ -26,6 +26,11 @@ bw.ready()
 fw.ready()
 fw.turning_max = 45
 
+GlobalPrint = True
+def myprint(text, verbose=True):
+    global GlobalPrint
+    if verbose and GlobalPrint:
+        print(text)
 
 class LineState:
     straight = 0
@@ -94,11 +99,11 @@ class LineState:
             new_line_state = self.ModeReverseLeft(self.CurrentMode, sensor_status)
 
         # check if state changed
-        print('new state: ' + str(new_line_state) + ' , old state: ' + str(self.CurrentMode))
+        myprint('new state: ' + str(new_line_state) + ' , old state: ' + str(self.CurrentMode))
         if new_line_state != self.CurrentMode: # the state has changed
             self.LineLostCounter = 0 # reset line lost counter
             self.LineFoundCounter = 0
-        print('line lost for ' + str(self.LineLostCounter) + ' cycle')
+        myprint('line lost for ' + str(self.LineLostCounter) + ' cycle')
 
         self.CurrentMode = new_line_state
         return self.CurrentMode
@@ -174,13 +179,13 @@ class LineState:
         if 100 < self.LineLostCounter < 150: # TODO: replace 10 by a proper timer <-------------
             # the line is lost
             # try to slow down and be ready to reverse
-            print('change state OuterRight->OuterRight')
+            myprint('change state OuterRight->OuterRight')
             new_line_mode = LineState.outerRight
             self.SetDriveTarget(30, 45)
             return new_line_mode
         elif self.LineLostCounter >= 150: # TODO: replace 20 by a proper timer <-------------
             # line is fully lost, change mode
-            print('change state OuterRight->reverseRight <-----')
+            myprint('change state OuterRight->reverseRight <-----')
             new_line_mode = LineState.reverseRight
             self.SetDriveTarget(0, 0)
             return new_line_mode
@@ -210,13 +215,13 @@ class LineState:
         if 100 < self.LineLostCounter < 150: # TODO: replace 10 by a proper timer <-------------
             # the line is lost
             # try to slow down and be ready to reverse
-            print('change state OuterLeft->OuterLeft')
+            myprint('change state OuterLeft->OuterLeft')
             new_line_mode = LineState.outerLeft
             self.SetDriveTarget(30, -45)
             return new_line_mode
         elif self.LineLostCounter >= 150: # TODO: replace 20 by a proper timer <-------------
             # line is fully lost, change mode
-            print('change state OuterLeft->reverseLeft <------')
+            myprint('change state OuterLeft->reverseLeft <------')
             new_line_mode = LineState.reverseLeft
             self.SetDriveTarget(0, 0)
             return new_line_mode
@@ -307,15 +312,15 @@ class DrivingState:
         if self.CurrentDrivingState == self.DrivingStateLine:
             self.CheckChangeLine()
         elif self.CurrentDrivingState == self.DrivingStateBrake:
-            print("placeholder")
+            myprint("placeholder")
         elif self.CurrentDrivingState == self.DrivingStateReverse:
-            print("placeholder")
+            myprint("placeholder")
         elif self.CurrentDrivingState == self.DrivingStateObstacle:
-            print("placeholder")
+            myprint("placeholder")
         elif self.CurrentDrivingState == self.DrivingStateFinal:
-            print("placeholder")
+            myprint("placeholder")
         elif self.CurrentDrivingState == self.DrivingStateLost:
-            print("placeholder")
+            myprint("placeholder")
             self.CurrentDrivingState = self.DrivingStateLine
         else: # self.CurrentDrivingState == self.DrivingStateNone:
             self.CurrentDrivingState = self.DrivingStateLost
@@ -337,7 +342,7 @@ def Drive(_drive_mode, delta_t):
 
     if _drive_mode == DrivingState.DrivingStateLine:
         # call the line-following methode
-        # print("Drive(): DrivingStateLine")
+        # myprint("Drive(): DrivingStateLine")
         ModeLineFollower.LineDrive()
         target_speed = ModeLineFollower.TargetSpeed
         target_angle = ModeLineFollower.TargetAngle
@@ -345,17 +350,17 @@ def Drive(_drive_mode, delta_t):
 
     elif _drive_mode == DrivingState.DrivingStateBrake:
         # call the braking methode
-        print("Drive(): placeholder DrivingStateBrake")
+        myprint("Drive(): placeholder DrivingStateBrake")
         
     elif _drive_mode == DrivingState.DrivingStateReverse:
-        print("Drive(): placeholder DrivingStateReverse")
+        myprint("Drive(): placeholder DrivingStateReverse")
     elif _drive_mode == DrivingState.DrivingStateObstacle:
-        print("Drive(): placeholder DrivingStateObstacle")
+        myprint("Drive(): placeholder DrivingStateObstacle")
     elif _drive_mode == DrivingState.DrivingStateFinal:
-        print("Drive(): placeholder DrivingStateFinal")
+        myprint("Drive(): placeholder DrivingStateFinal")
         SetDriveTarget(0, 0, delta_t)
     elif _drive_mode == DrivingState.DrivingStateLost:
-        print("Drive(): placeholder DrivingStateLost")
+        myprint("Drive(): placeholder DrivingStateLost")
 
 #TempSpeedBuffer = 0
 #TempAngleBuffer = 90
@@ -365,7 +370,7 @@ def SetDriveTarget(wheel_speed, wheel_angle, delta_t):
     #global TempSpeedBuffer, TempAngleBuffer
     global LastSpeed, LastAngle
 
-    print('[ SetDriveTarget() ] target speed: ' + str(wheel_speed) + ' , target angle: ' + str(wheel_angle))
+    myprint('[ SetDriveTarget() ] target speed: ' + str(wheel_speed) + ' , target angle: ' + str(wheel_angle))
     # call smoothing logic
         # compute speed limit with both current and target steer angle and choose the lowest
     #TempSpeedBuffer = (TempSpeedBuffer * 0.9) + (wheel_speed * 0.1)
@@ -417,8 +422,8 @@ def ComputeAccel(wheel_speed, wheel_angle, delta_t):
 
     LastSpeed = LastSpeed + speed_delta
     LastAngle = LastAngle + angle_delta
-    print('New speed: ' + str(LastSpeed) + ' , speed_delta: ' + str(speed_delta))
-    print('New angle: ' + str(LastAngle) + ' , angle_delta: ' + str(angle_delta))
+    myprint('New speed: ' + str(LastSpeed) + ' , speed_delta: ' + str(speed_delta))
+    myprint('New angle: ' + str(LastAngle) + ' , angle_delta: ' + str(angle_delta))
 
 
 def InitCar():
@@ -455,10 +460,6 @@ if __name__ == '__main__':
 
         while(True):
             # get time elapsed
-            #new_time = time.process_time()
-            #delta_t = new_time - last_time
-            #last_time = new_time
-            
             delta_t = 0.1
             if initial_time != 0:
                 new_time = time.monotonic()
