@@ -542,6 +542,7 @@ def Drive(_drive_mode, delta_t):
 #TempAngleBuffer = 90
 LastSpeed = 0
 LastAngle = 0
+LastShake = 1
 def SetDriveTarget(wheel_speed, wheel_angle, delta_t):
     #global TempSpeedBuffer, TempAngleBuffer
     global LastSpeed, LastAngle
@@ -573,26 +574,45 @@ def SetDriveTarget(wheel_speed, wheel_angle, delta_t):
 
     fw.turn(ParseTurn(smooth_angle))
 
+LastRequest = 0
 def ComputeAccel(wheel_speed, wheel_angle, delta_t):
-    global LastSpeed, LastAngle
+    global LastSpeed, LastAngle, LastShake, LastRequest
     CORRECTION_RATE = 0.05
 
     step_limit_speed = CORRECTION_RATE / delta_t # move a base amount every cycle
-    step_limit_angle = 2.0 * CORRECTION_RATE / delta_t # move a base amount every cycle
+    step_limit_angle = 8.0 * CORRECTION_RATE / delta_t # move a base amount every cycle
 
     # TODO: STEP 1 - Set limits on target speed/angle based on current angle/speed
+    greater_angle = max( (abs(LastAngle), abs(wheel_angle)) ) # use [greater_angle] to limit [wheel_speed]
+    #wheel_speed = wheel_speed * (1 - greater_angle/90) # limit target speed when turning a lot
+    # alternative methode
+    if wheel_speed > (50 - 0.5 * greater_angle):
+        wheel_speed = 50 - 0.5 * greater_angle
+    
+    #greater_speed = max( (abs(LastSpeed), abs(wheel_speed)) ) # placeholder
+        # use [greater_speed] to limit [wheel_angle] variation, not max angle
+    step_limit_angle = step_limit_angle * ((50 + 0.5 * abs(LastSpeed)) / 100) # limit wheel kick when CURRENTLY going fast
+
+
     # TODO: STEP 2 - Compute a "shake" factor and reduce [step_limit_speed]/[step_limit_angle] based on it
+    LastShake = LastShake + abs(wheel_speed - LastRequest) # increase shake when changing speed
+    LastShake = LastShake - (0.1 * delta_t) # reduce Shake over time
+    if LastShake < 1:
+        LastShake = 1
 
-    # limit acceleration when turning a lot
-        # step_limit_speed = step_limit_speed * abs(math.sin( math.radians(LastAngle) ) ) # TODO: old, to be removed
-    # limit wheel angle turn when going fast (0.5 at full speed, 1.0 at no speed)
-        # step_limit_angle = step_limit_angle * ((50 + abs(LastSpeed / 2)) / 100) 
+    LastRequest = int(wheel_speed)
 
+    # account for Shake
+    step_limit_speed = step_limit_speed / LastShake
+    step_limit_angle = step_limit_angle / LastShake
+
+    # compute adjustments
     speed_delta = wheel_speed - LastSpeed
+    angle_delta = wheel_angle - LastAngle
+    # clamp adjustments
     if speed_delta < (0-step_limit_speed): speed_delta = 0 - step_limit_speed
     if speed_delta > (0+step_limit_speed): speed_delta = 0 + step_limit_speed
 
-    angle_delta = wheel_angle - LastAngle
     if angle_delta < (0-step_limit_angle): angle_delta = 0 - step_limit_angle
     if angle_delta > (0+step_limit_angle): angle_delta = 0 + step_limit_angle
 
