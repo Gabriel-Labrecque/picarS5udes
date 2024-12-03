@@ -21,16 +21,19 @@ bw = back_wheels.Back_Wheels(db='config')
 lf = Line_Follower.Line_Follower()
 ua = Ultrasonic_Avoidance.Ultrasonic_Avoidance(20)
 
-REFERENCES = [30.0, 29.5, 30.0, 34.0, 29.0]
+#REFERENCES = [30.0, 29.5, 30.0, 34.0, 29.0] # normal white
+REFERENCES = [12.0, 12.0, 12.0, 12.0, 12.0] # garage
 lf.references = REFERENCES
 bw.ready()
 fw.ready()
-fw.turning_max = 45
+fw.turning_max = 50
 
 SensorLine = [0,0,0,0,0]
-SensorDistance = 30
+SensorDistance = 100
 SensorDistanceEnable = True
-
+SensorDistanceLoop = 0 # timer of time time since last read
+SensorDistanceDelay = 1.0 # SET the time in sec between sensor read
+ObstacleOver = False
    
 def getDistance(prevDistance):
     s_10 = 1.4648     # Écart-type pour 10 cm
@@ -38,22 +41,24 @@ def getDistance(prevDistance):
     Z_critical = 1.96 # Valeur critique pour un niveau de confiance de 95%
     
     distance = ua.get_distance()
-    distance = (distance + prevDistance)/2 # spike smoothing
+    #distance = (distance + prevDistance)/2 # spike smoothing
     IC_lower_10 = distance - Z_critical * (s_10 / math.sqrt(n_10))
     IC_upper_10 = distance + Z_critical * (s_10 / math.sqrt(n_10))
     
-    if(IC_lower_10 < prevDistance) and (prevDistance < IC_upper_10):    
-        #print("distance: %scm" % prevDistance)
-        distance = prevDistance
+    #if(IC_lower_10 < prevDistance) and (prevDistance < IC_upper_10):    
+    #    #print("distance: %scm" % prevDistance)
+    #    distance = prevDistance
 
     return distance
 
-def UpdateSensor():
-    global SensorLine, SensorDistance, SensorDistanceEnable
+def UpdateSensor(delta_t):
+    global SensorLine, SensorDistance, SensorDistanceEnable, SensorDistanceLoop, SensorDistanceDelay
     SensorLine = lf.read_digital()
-
-    if SensorDistanceEnable:
+    SensorDistanceLoop = SensorDistanceLoop + delta_t
+    if SensorDistanceEnable and (SensorDistanceLoop > SensorDistanceDelay):
+        SensorDistanceLoop = 0
         SensorDistance = getDistance(SensorDistance)
+        myprint('distance read: ' + str(SensorDistance), 1)
 
 
 GlobalPrint = True
@@ -136,11 +141,11 @@ class LineState:
             new_line_state = self.ModeReverseLeft(self.CurrentMode, sensor_status)
 
         # check if state changed
-        myprint('new state: ' + str(new_line_state) + ' , old state: ' + str(self.CurrentMode))
+        myprint('new state: ' + str(new_line_state) + ' , old state: ' + str(self.CurrentMode), 0)
         if new_line_state != self.CurrentMode: # the state has changed
             self.LineLostTimer = 0 # reset line lost counter
             self.LineFoundCounter = 0
-        myprint('line lost for ' + str(self.LineLostTimer) + ' cycle')
+        myprint('line lost for ' + str(self.LineLostTimer) + ' cycle', 0)
 
         self.CurrentMode = new_line_state
         return self.CurrentMode
@@ -162,7 +167,7 @@ class LineState:
             new_line_mode = LineState.outerLeft
 
         # move the car
-        self.SetDriveTarget(50, 0)
+        self.SetDriveTarget(60, 0)
 
         # return the new LineState, or the current one if there's no change
         return new_line_mode
@@ -213,16 +218,16 @@ class LineState:
         new_line_mode = int(line_mode)
 
         # check if line is lost ( this covers the case [0,0,0,0,0] )
-        if 3 < self.LineLostTimer < 5: # slow down after 3 sec 
+        if 3 < self.LineLostTimer < 4: # slow down after 3 sec 
             # the line is lost
             # try to slow down and be ready to reverse
-            myprint('change state OuterRight->OuterRight')
+            myprint('change state OuterRight->OuterRight', 0)
             new_line_mode = LineState.outerRight
-            self.SetDriveTarget(30, 45)
+            self.SetDriveTarget(20, 45)
             return new_line_mode
-        elif self.LineLostTimer >= 5: # start revesing after 5 sec
+        elif self.LineLostTimer >= 4: # start revesing after 5 sec
             # line is fully lost, change mode
-            myprint('change state OuterRight->reverseRight <-----')
+            myprint('change state OuterRight->reverseRight <-----', 0)
             new_line_mode = LineState.reverseRight
             self.SetDriveTarget(0, 0)
             return new_line_mode
@@ -249,16 +254,16 @@ class LineState:
         new_line_mode = int(line_mode)
 
         # check if line is lost ( this covers the case [0,0,0,0,0] )
-        if 3 < self.LineLostTimer < 5: # slow down after 3 sec 
+        if 3 < self.LineLostTimer < 4: # slow down after 3 sec 
             # the line is lost
             # try to slow down and be ready to reverse
-            myprint('change state OuterLeft->OuterLeft')
+            myprint('change state OuterLeft->OuterLeft', 0)
             new_line_mode = LineState.outerLeft
-            self.SetDriveTarget(30, -45)
+            self.SetDriveTarget(20, -45)
             return new_line_mode
-        elif self.LineLostTimer >= 5: # start revesing after 5 sec
+        elif self.LineLostTimer >= 4: # start revesing after 5 sec
             # line is fully lost, change mode
-            myprint('change state OuterLeft->reverseLeft <------')
+            myprint('change state OuterLeft->reverseLeft <------', 0)
             new_line_mode = LineState.reverseLeft
             self.SetDriveTarget(0, 0)
             return new_line_mode
@@ -287,24 +292,20 @@ class LineState:
         # LineLostCounter used because it gets reset at the same time we start reversing
         if line_sensor != [0,0,0,0,0]:
             # line found
-            new_line_mode = LineState.outerRight # good enough state, it will get changed again next loop
+            new_line_mode = LineState.straight # good enough state, it will get changed again next loop
             self.SetDriveTarget(0, 0)
-        elif self.LineLostTimer < 100:
+        elif self.LineLostTimer < 5:
             # keep reversing
             new_line_mode = LineState.reverseRight
             self.SetDriveTarget(-40, -45)
-        elif self.LineLostTimer < 150:
+        elif self.LineLostTimer < 7:
             # start slowing down again
             new_line_mode = LineState.reverseRight
-            self.SetDriveTarget(-30, -30)
-        elif self.LineLostTimer >= 150:
+            self.SetDriveTarget(-20, -30)
+        else:
             # reversing for long enough, start going forward again
             new_line_mode = LineState.outerRight
             self.SetDriveTarget(0, 0)
-        else:
-            # keep reversing
-            new_line_mode = LineState.reverseRight
-            self.SetDriveTarget(-40, -45)
 
         return new_line_mode
 
@@ -314,24 +315,20 @@ class LineState:
         # LineLostCounter used because it gets reset at the same time we start reversing
         if line_sensor != [0,0,0,0,0]:
             # line found
-            new_line_mode = LineState.outerLeft # good enough state, it will get changed again next loop
+            new_line_mode = LineState.straight # good enough state, it will get changed again next loop
             self.SetDriveTarget(0, 0)
-        elif self.LineLostTimer < 100:
+        elif self.LineLostTimer < 5:
             # keep reversing
             new_line_mode = LineState.reverseLeft
             self.SetDriveTarget(-40, 45)
-        elif self.LineLostTimer < 150:
+        elif self.LineLostTimer < 7:
             # start slowing down again
             new_line_mode = LineState.reverseLeft
-            self.SetDriveTarget(-30, 30)
-        elif self.LineLostTimer >= 150:
+            self.SetDriveTarget(-20, 30)
+        else:
             # reversing for long enough, start going forward again
             new_line_mode = LineState.outerLeft
             self.SetDriveTarget(0, 0)
-        else:
-            # keep reversing
-            new_line_mode = LineState.reverseLeft
-            self.SetDriveTarget(-40, 45)
 
         return new_line_mode
 
@@ -340,27 +337,16 @@ class BrakeState:
     TargetSpeed = 0
     DistanceToWall = 100
 
-    def BrakeDrive(self, dt=0.1, force_reset=False):
+    def BrakeDrive(self, dt=0.1):
         # read sensor
         global SensorDistance
         self.DistanceToWall = SensorDistance
 
         # PLACEHOLDER CODE
-        if self.DistanceToWall > 10:
-            self.TargetSpeed = 30 + ( 0.5 * self.DistanceToWall)
-        elif self.DistanceToWall <= 10:
+        if self.DistanceToWall > 12:
+            self.TargetSpeed = 20 + ( 0.5 * self.DistanceToWall)
+        elif self.DistanceToWall <= 12:
             self.TargetSpeed = 0
-    
-    def CheckFinal(self): # UNSUED, TO BE DELETED
-        global LastSpeed
-        success1 = False
-        success2 = False
-        if 8 < self.DistanceToWall < 12: # proper distance to wall
-            success1 = True
-        if -10 < LastSpeed < 10: # car stopped
-            success2 = True
-        
-        self.BrakeComplete = success1 and success2
     
 class ReverseState:
     TargetSpeed = 0
@@ -370,9 +356,9 @@ class ReverseState:
         global SensorDistance
         self.DistanceToWall = SensorDistance
         # PLACEHOLDER CODE
-        if self.DistanceToWall < 20:
+        if self.DistanceToWall < 22:
             self.TargetSpeed = -30 
-        elif self.DistanceToWall >= 20:
+        elif self.DistanceToWall >= 22:
             self.TargetSpeed = 0
 
 class ObstacleState:
@@ -383,19 +369,28 @@ class ObstacleState:
     TargetAngle = 0
 
     def ObstacleDrive(self, dt=0.1):
-        self.TimePassed = self.TimePassed + dt
+        global ObstacleOver
 
-        if self.TimePassed < 10:
+        self.TimePassed = self.TimePassed + dt
+        myprint('time in obstacle mode: ' + str(self.TimePassed), 0)
+
+        if self.TimePassed < 3.2: # 0 to 6 sec
             # ----- TURN 1 -----
             self.TargetSpeed = 40
             self.TargetAngle = 45
 
-        elif self.TimePassed < 20:
+        elif self.TimePassed < 5.5: # 6 to 10 sec
             # ----- TURN 2 -----
             self.TargetSpeed = 40
-            self.TargetAngle = -45
+            self.TargetAngle = -35
 
-        elif self.TimePassed < 30:
+        elif self.TimePassed < 7:
+            # ---- STRAIGHT ----
+            self.TargetSpeed = 40
+            self.TargetAngle = 0
+
+        elif self.TimePassed < 10: # 10 to 15 sec
+            ObstacleOver = True
             # ----- TURN 3 -----
             self.TargetSpeed = 40
             self.TargetAngle = -30
@@ -410,30 +405,30 @@ class DrivingState:
     DrivingStateLost = 5
     DrivingStateNone = -1  #
 
-    CurrentDrivingState = DrivingStateLost
+    CurrentDrivingState = DrivingStateLine
     def CheckDrivingMode(self):
         if self.CurrentDrivingState == self.DrivingStateLine:
-            myprint("DrivingStateLine")
+            myprint("DrivingStateLine", 0)
             self.CheckChangeLine()
 
         elif self.CurrentDrivingState == self.DrivingStateBrake:
-            myprint("DrivingStateBrake")
+            myprint("DrivingStateBrake", 0)
             self.CheckChangeBrake()
 
         elif self.CurrentDrivingState == self.DrivingStateReverse:
-            myprint("DrivingStateReverse")
+            myprint("DrivingStateReverse", 0)
             self.CheckChangeReverse() # TODO <----------------------
 
         elif self.CurrentDrivingState == self.DrivingStateObstacle:
-            myprint("DrivingStateObstacle")
+            myprint("DrivingStateObstacle", 0)
             self.CheckChangeObstacle()
 
         elif self.CurrentDrivingState == self.DrivingStateFinal:
-            myprint("DrivingStateFinal")
+            myprint("DrivingStateFinal", 0)
             # TODO <----------------------
 
         elif self.CurrentDrivingState == self.DrivingStateLost:
-            myprint("DrivingStateLost")
+            myprint("DrivingStateLost", 0)
             self.CurrentDrivingState = self.DrivingStateLine
 
         else: # self.CurrentDrivingState == self.DrivingStateNone:
@@ -442,47 +437,55 @@ class DrivingState:
         return self.CurrentDrivingState
 
     def CheckChangeLine(self):
-        global SensorLine, SensorDistance, SensorDistanceEnable
+        global SensorLine, SensorDistance, SensorDistanceEnable, SensorDistanceDelay
 
         if SensorLine == [1,1,1,1,1]:
             self.CurrentDrivingState = self.DrivingStateFinal
             myprint('CHANGED STATE TO FINAL (from line follow)', 2)
-        elif SensorDistanceEnable and (SensorDistance < 30): # obstacle seen within 30cm
+        elif SensorDistanceEnable and (SensorDistance < 40): # obstacle seen within 30cm
+            SensorDistanceDelay = 0.2 # change frequency of reading distance 
             self.CurrentDrivingState = self.DrivingStateBrake
+            myprint('changed state: DrivingStateLine -> DrivingStateBrake', 1)
 
     def CheckChangeBrake(self):
         global SensorDistance, LastSpeed
         good_distance = False
         good_speed = False
         
-        if 8 < SensorDistance < 12: # proper distance to wall
+        if SensorDistance < 12: # proper distance to wall
+            myprint('CLOSE TO WALL SHOULD BE STOPPED NOW', 1)
             good_distance = True
         if -10 < LastSpeed < 10: # car stopped
             good_speed = True
         
         if good_distance and good_speed:
             self.CurrentDrivingState = self.DrivingStateReverse
+            myprint('changed state: DrivingStateBrake -> DrivingStateReverse', 1)
 
     def CheckChangeReverse(self):
-        global SensorDistance, LastSpeed, SensorDistanceEnable
+        global SensorDistance, LastSpeed, SensorDistanceEnable, SensorDistanceDelay
         good_distance = False
         good_speed = False
 
-        if 18 < SensorDistance < 22: # proper distance to wall
+        if SensorDistance > 22: # proper distance to wall
             good_distance = True
         if -10 < LastSpeed < 10: # car stopped
             good_speed = True
         
         if good_distance and good_speed:
             SensorDistanceEnable = False
-            self.CurrentDrivingState = self.DrivingStateReverse
-
+            SensorDistanceDelay = 1.0 # change frequency of reading distance 
+            self.CurrentDrivingState = self.DrivingStateObstacle
+            myprint('changed state: DrivingStateReverse -> DrivingStateObstacle', 1)
 
     def CheckChangeObstacle(self):
-        global SensorLine, SensorDistanceEnable
-        if SensorLine != [0,0,0,0,0]: # line found
+        global SensorLine, SensorDistanceEnable, SensorDistanceDelay, ObstacleOver
+        if (SensorLine != [0,0,0,0,0]) and ObstacleOver: # line found
             SensorDistanceEnable = False
+            
+            SensorDistanceDelay = 1.0 # change frequency of reading distance 
             self.CurrentDrivingState = self.DrivingStateLine
+            myprint('changed state: DrivingStateObstacle -> DrivingStateLine', 1)
 
 #----------------------------------------------------------------------------------
 # main function to move the car every
@@ -512,31 +515,31 @@ def Drive(_drive_mode, delta_t):
             # keep the line follower to control wheel angle
             # control wheel speed with distance sensor
         SetDriveTarget(target_speed, target_angle, delta_t)
-        myprint("Drive(): placeholder DrivingStateBrake")
+        myprint("Drive(): placeholder DrivingStateBrake", 0)
         
     elif _drive_mode == DrivingState.DrivingStateReverse:
         ModeReverse.ReverseDrive()
         target_speed = ModeReverse.TargetSpeed # speed from brake
         target_angle = 0 # go straight
         SetDriveTarget(target_speed, target_angle, delta_t)
-        myprint("Drive(): placeholder DrivingStateReverse")
+        myprint("Drive(): placeholder DrivingStateReverse", 0)
 
     elif _drive_mode == DrivingState.DrivingStateObstacle:
-        ModeObstacle.ObstacleDrive()
+        ModeObstacle.ObstacleDrive(delta_t)
         target_speed = ModeObstacle.TargetSpeed
         target_angle = ModeObstacle.TargetAngle
         ModeLineFollower.CurrentMode = LineState.outerRight # prime the line follower to turn in the right direction
         SetDriveTarget(target_speed, target_angle, delta_t)
-        myprint("Drive(): placeholder DrivingStateObstacle")
+        myprint("Drive(): placeholder DrivingStateObstacle", 0)
 
     elif _drive_mode == DrivingState.DrivingStateFinal:
         target_speed = 0
         target_angle = 0
         SetDriveTarget(0, 0, delta_t)
-        myprint("Drive(): placeholder DrivingStateFinal")
+        myprint("Drive(): placeholder DrivingStateFinal", 0)
 
     elif _drive_mode == DrivingState.DrivingStateLost:
-        myprint("Drive(): placeholder DrivingStateLost")
+        myprint("Drive(): placeholder DrivingStateLost", 0)
 
 #TempSpeedBuffer = 0
 #TempAngleBuffer = 90
@@ -547,7 +550,7 @@ def SetDriveTarget(wheel_speed, wheel_angle, delta_t):
     #global TempSpeedBuffer, TempAngleBuffer
     global LastSpeed, LastAngle
 
-    myprint('[ SetDriveTarget() ] target speed: ' + str(wheel_speed) + ' , target angle: ' + str(wheel_angle))
+    myprint('[ SetDriveTarget() ] target speed: ' + str(wheel_speed) + ' , target angle: ' + str(wheel_angle), 0)
     # call smoothing logic
         # compute speed limit with both current and target steer angle and choose the lowest
     
@@ -574,37 +577,43 @@ def SetDriveTarget(wheel_speed, wheel_angle, delta_t):
 
     fw.turn(ParseTurn(smooth_angle))
 
-LastRequest = 0
+LastSpeedRequest = 0
+LastAngleRequest = 0
 def ComputeAccel(wheel_speed, wheel_angle, delta_t):
-    global LastSpeed, LastAngle, LastShake, LastRequest
+    global LastSpeed, LastAngle, LastShake, LastSpeedRequest, LastAngleRequest
     CORRECTION_RATE = 0.05
 
     step_limit_speed = CORRECTION_RATE / delta_t # move a base amount every cycle
-    step_limit_angle = 8.0 * CORRECTION_RATE / delta_t # move a base amount every cycle
+    step_limit_angle = 5.0 * CORRECTION_RATE / delta_t # move a base amount every cycle
 
     # TODO: STEP 1 - Set limits on target speed/angle based on current angle/speed
     greater_angle = max( (abs(LastAngle), abs(wheel_angle)) ) # use [greater_angle] to limit [wheel_speed]
     #wheel_speed = wheel_speed * (1 - greater_angle/90) # limit target speed when turning a lot
     # alternative methode
-    if wheel_speed > (50 - 0.5 * greater_angle):
-        wheel_speed = 50 - 0.5 * greater_angle
+    if wheel_speed > (80 - 0.8 * greater_angle):
+        wheel_speed = 80 - 0.8 * greater_angle
     
     #greater_speed = max( (abs(LastSpeed), abs(wheel_speed)) ) # placeholder
         # use [greater_speed] to limit [wheel_angle] variation, not max angle
-    step_limit_angle = step_limit_angle * ((50 + 0.5 * abs(LastSpeed)) / 100) # limit wheel kick when CURRENTLY going fast
+    step_limit_angle = step_limit_angle * ((100 - 0.5 * abs(LastSpeed)) / 100) # limit wheel kick when CURRENTLY going fast
 
 
     # TODO: STEP 2 - Compute a "shake" factor and reduce [step_limit_speed]/[step_limit_angle] based on it
-    LastShake = LastShake + abs(wheel_speed - LastRequest) # increase shake when changing speed
-    LastShake = LastShake - (0.1 * delta_t) # reduce Shake over time
+    kick = max(( abs(wheel_speed - LastSpeedRequest), abs(wheel_angle - LastAngleRequest)/2 ))
+    LastShake = LastShake + kick # increase shake when changing speed
+    LastShake = LastShake - (50.0 * delta_t) # reduce Shake over time
     if LastShake < 1:
         LastShake = 1
+    if LastShake > 50:
+        LastShake = 50
 
-    LastRequest = int(wheel_speed)
+    LastSpeedRequest = float(wheel_speed)
+    LastAngleRequest = float(wheel_angle)
 
+    myprint('Kick: ' + str(kick) + 'LastRequest: ' + str(LastSpeedRequest) + ' , LastShake: ' + str(LastShake), 0)
     # account for Shake
-    step_limit_speed = step_limit_speed / LastShake
-    step_limit_angle = step_limit_angle / LastShake
+    step_limit_speed = step_limit_speed / (2 * math.sqrt( LastShake ))
+    step_limit_angle = step_limit_angle / (0.5 * (2 * math.sqrt( LastShake )))
 
     # compute adjustments
     speed_delta = wheel_speed - LastSpeed
@@ -620,12 +629,21 @@ def ComputeAccel(wheel_speed, wheel_angle, delta_t):
     # further reduce the speed adjustement if the shake factor is high
     LastSpeed = LastSpeed + speed_delta
     LastAngle = LastAngle + angle_delta
-    myprint('New speed: ' + str(LastSpeed) + ' , speed_delta: ' + str(speed_delta))
-    myprint('New angle: ' + str(LastAngle) + ' , angle_delta: ' + str(angle_delta))
+    myprint('New speed: ' + str(LastSpeed) + ' , speed_delta: ' + str(speed_delta), 0)
+    myprint('New angle: ' + str(LastAngle) + ' , angle_delta: ' + str(angle_delta), 0)
 
 def ParseTurn(angle):
     # TODO: account for the wheel not being at 45 when you tell them to
-    return int(90 + angle)
+    left_limit = 50
+    right_limit = 50
+    true_angle = 0
+
+    if angle < 0:
+        true_angle = angle * (left_limit / 45.0)
+    if angle > 0:
+        true_angle = angle * (right_limit / 45.0)
+
+    return int(90 + true_angle)
 
 def InitCar():
     # init picar
@@ -637,7 +655,9 @@ def InitCar():
     ModeLineFollower.CurrentMode = LineState.straight
 
     global SensorDistanceEnable
-    SensorDistanceEnable = True
+    SensorDistanceEnable = True # TOGGLE IF WE WANT TO CHECK FOR OBSTACLE
+
+    myprint('current sensor view: ' + str(lf.get_average(100)), 1)
 
 def TerminateCar():
     bw.speed = 0
@@ -668,9 +688,7 @@ if __name__ == '__main__':
         last_time = float(initial_time)
 
         while(driving_state.CurrentDrivingState != DrivingState.DrivingStateFinal):
-            # read from sensors
-            UpdateSensor()
-
+            
             # get time elapsed
             delta_t = 0.1
             if initial_time != 0:
@@ -678,11 +696,15 @@ if __name__ == '__main__':
                 delta_t = new_time - last_time
                 last_time = float(new_time)
 
+            # read from sensors
+            UpdateSensor(delta_t)
+
             # update driving mode
             drive_mode = driving_state.CheckDrivingMode()
 
             # drive the car
             Drive(drive_mode, delta_t)
+            #time.sleep(0.01)
         
         # TODO: ADD A DECELERATION ONCE THE T IS REACHED <--------------------------
         print('Final state reached, stopping car')
