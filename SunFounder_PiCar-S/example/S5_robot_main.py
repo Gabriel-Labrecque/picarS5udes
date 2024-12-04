@@ -379,12 +379,12 @@ class ObstacleState:
             self.TargetSpeed = 40
             self.TargetAngle = 45
 
-        elif self.TimePassed < 5.5: # 6 to 10 sec
+        elif self.TimePassed < 6: # 6 to 10 sec
             # ----- TURN 2 -----
             self.TargetSpeed = 40
             self.TargetAngle = -35
 
-        elif self.TimePassed < 7:
+        elif self.TimePassed < 7.5:
             # ---- STRAIGHT ----
             self.TargetSpeed = 40
             self.TargetAngle = 0
@@ -403,6 +403,7 @@ class DrivingState:
     DrivingStateObstacle = 3
     DrivingStateFinal = 4
     DrivingStateLost = 5
+    DrivingStateOver = 6 # passed the T and stopped
     DrivingStateNone = -1  #
 
     CurrentDrivingState = DrivingStateLine
@@ -425,7 +426,7 @@ class DrivingState:
 
         elif self.CurrentDrivingState == self.DrivingStateFinal:
             myprint("DrivingStateFinal", 0)
-            # TODO <----------------------
+            self.CheckChangeFinal()
 
         elif self.CurrentDrivingState == self.DrivingStateLost:
             myprint("DrivingStateLost", 0)
@@ -439,6 +440,8 @@ class DrivingState:
     def CheckChangeLine(self):
         global SensorLine, SensorDistance, SensorDistanceEnable, SensorDistanceDelay
 
+        if sum(SensorLine) >= 4: # at least 4 line sensor at the same time
+            self.CurrentDrivingState = self.DrivingStateFinal
         if SensorLine == [1,1,1,1,1]:
             self.CurrentDrivingState = self.DrivingStateFinal
             myprint('CHANGED STATE TO FINAL (from line follow)', 2)
@@ -487,6 +490,10 @@ class DrivingState:
             self.CurrentDrivingState = self.DrivingStateLine
             myprint('changed state: DrivingStateObstacle -> DrivingStateLine', 1)
 
+    def CheckChangeFinal(self):
+        global LastSpeed
+        if LastSpeed < 10:
+            self.CurrentDrivingState = self.DrivingStateOver
 #----------------------------------------------------------------------------------
 # main function to move the car every
 #
@@ -670,7 +677,7 @@ def TerminateCar():
 
 if __name__ == '__main__':
     initial_time = 0
-
+    
     try:
         initial_time = time.monotonic()
     except Exception as e:
@@ -687,7 +694,7 @@ if __name__ == '__main__':
         
         last_time = float(initial_time)
 
-        while(driving_state.CurrentDrivingState != DrivingState.DrivingStateFinal):
+        while(driving_state.CurrentDrivingState != DrivingState.DrivingStateOver):
             
             # get time elapsed
             delta_t = 0.1
@@ -707,7 +714,7 @@ if __name__ == '__main__':
             #time.sleep(0.01)
         
         # TODO: ADD A DECELERATION ONCE THE T IS REACHED <--------------------------
-        print('Final state reached, stopping car')
+        print('Final state reached, car stopped')
         TerminateCar()
 
     except Exception as e:
